@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { Trip, TripStop } from '../types/trip';
+import { Trip, TripStop, ItineraryActivity } from '../types/trip';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
@@ -19,13 +19,8 @@ export const apiClient = axios.create({
  * Fetch all trips for the authenticated user
  */
 export async function getTrips(): Promise<Trip[]> {
-  try {
-    const response = await apiClient.get('/trips');
-    return response.data.data || response.data || [];
-  } catch (error: any) {
-    console.warn('API getTrips failed, falling back to client state:', error.message);
-    throw error;
-  }
+  const response = await apiClient.get('/trips');
+  return response.data.data || response.data || [];
 }
 
 /**
@@ -137,5 +132,60 @@ export async function reorderStops(
   stops: { id: number; sequence_order: number }[]
 ): Promise<TripStop[]> {
   const response = await apiClient.patch(`/trips/${tripId}/stops/reorder`, { stops });
+  return response.data.data || response.data;
+}
+
+/* ============================================================================
+ * ITINERARY ACTIVITIES API SERVICES
+ * ============================================================================ */
+
+/**
+ * Schedule a new day-wise activity under a trip stop
+ */
+export async function addActivity(activityData: {
+  trip_stop_id: number;
+  custom_title: string;
+  category?: string;
+  scheduled_date: string; // DD/MM/YYYY
+  start_time?: string;
+  end_time?: string;
+  custom_cost?: number;
+  notes?: string;
+  sequence_order?: number;
+}): Promise<ItineraryActivity> {
+  const response = await apiClient.post('/itinerary-activities', activityData);
+  return response.data.data || response.data;
+}
+
+/**
+ * Update a scheduled activity
+ */
+export async function updateActivity(
+  id: string | number,
+  updateData: Partial<ItineraryActivity>
+): Promise<ItineraryActivity> {
+  const response = await apiClient.put(`/itinerary-activities/${id}`, updateData);
+  return response.data.data || response.data;
+}
+
+/**
+ * Delete a scheduled activity
+ */
+export async function deleteActivity(id: string | number): Promise<boolean> {
+  const response = await apiClient.delete(`/itinerary-activities/${id}`);
+  return response.data.success ?? true;
+}
+
+/**
+ * Reorder activities sequence for a trip stop
+ */
+export async function reorderActivities(
+  tripStopId: number,
+  activities: { id: number; sequence_order: number }[]
+): Promise<ItineraryActivity[]> {
+  const response = await apiClient.patch('/itinerary-activities/reorder', {
+    trip_stop_id: tripStopId,
+    activities,
+  });
   return response.data.data || response.data;
 }

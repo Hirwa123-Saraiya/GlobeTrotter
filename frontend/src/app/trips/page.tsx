@@ -5,6 +5,7 @@ import { Plus, Search, Compass, Sparkles, MapPin, DollarSign, RefreshCw, AlertCi
 import TripCard from '../../components/TripCard';
 import CreateTripModal from '../../components/CreateTripModal';
 import ShareModal from '../../components/ShareModal';
+import DeleteConfirmModal from '../../components/DeleteConfirmModal';
 import { Trip } from '../../types/trip';
 import { getTrips, createTrip, deleteTrip } from '../../lib/api';
 
@@ -16,6 +17,7 @@ export default function TripsPage() {
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [activeShareTrip, setActiveShareTrip] = useState<Trip | null>(null);
+  const [deleteTripIdTarget, setDeleteTripIdTarget] = useState<number | null>(null);
 
   // Fetch Real Trips from Backend Database API
   const fetchTripsFromApi = async () => {
@@ -63,18 +65,20 @@ export default function TripsPage() {
     }
   };
 
-  // Delete Trip Handler
-  const handleDeleteTrip = async (id: number) => {
-    if (!confirm('Are you sure you want to delete this trip?')) return;
+  // Confirm & Delete Trip Handler
+  const handleConfirmDeleteTrip = async () => {
+    if (!deleteTripIdTarget) return;
     try {
-      await deleteTrip(id);
-      setTrips(trips.filter(t => t.id !== id));
+      await deleteTrip(deleteTripIdTarget);
+      setTrips(trips.filter(t => t.id !== deleteTripIdTarget));
     } catch (err: any) {
       alert('Failed to delete trip: ' + (err.response?.data?.message || err.message));
+    } finally {
+      setDeleteTripIdTarget(null);
     }
   };
 
-  // Open Share Modal (without mutating is_public automatically)
+  // Open Share Modal
   const handleShareTripClick = (trip: Trip) => {
     setActiveShareTrip(trip);
   };
@@ -219,7 +223,7 @@ export default function TripsPage() {
             <TripCard 
               key={trip.id} 
               trip={trip} 
-              onDelete={handleDeleteTrip} 
+              onDelete={(id) => setDeleteTripIdTarget(id)} 
               onShare={handleShareTripClick} 
             />
           ))}
@@ -256,6 +260,15 @@ export default function TripsPage() {
         trip={activeShareTrip} 
         onClose={() => setActiveShareTrip(null)} 
         onTripUpdated={handleTripUpdated}
+      />
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmModal
+        isOpen={!!deleteTripIdTarget}
+        title="Delete Trip Itinerary?"
+        message="Are you sure you want to delete this trip and all its associated city stops and day activities? This action cannot be undone."
+        onClose={() => setDeleteTripIdTarget(null)}
+        onConfirm={handleConfirmDeleteTrip}
       />
     </div>
   );

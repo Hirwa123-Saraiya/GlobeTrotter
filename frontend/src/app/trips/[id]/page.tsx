@@ -8,19 +8,32 @@ import {
 } from 'lucide-react';
 import StopCard from '../../../components/StopCard';
 import AddStopModal from '../../../components/AddStopModal';
+import ActivityModal from '../../../components/AddActivityModal';
 import ShareModal from '../../../components/ShareModal';
-import { Trip, TripStop } from '../../../types/trip';
-import { getTripById, addStop, deleteStop, shareTrip } from '../../../lib/api';
+import DeleteConfirmModal from '../../../components/DeleteConfirmModal';
+import { Trip, TripStop, ItineraryActivity } from '../../../types/trip';
+import { getTripById, addStop, deleteStop, shareTrip, addActivity, updateActivity, deleteActivity } from '../../../lib/api';
 
 export default function TripDetailsPage({ params }: { params: { id: string } }) {
   const [trip, setTrip] = useState<Trip | null>(null);
   const [stops, setStops] = useState<TripStop[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Modals state
   const [isAddStopModalOpen, setIsAddStopModalOpen] = useState(false);
+  const [activeStopForActivity, setActiveStopForActivity] = useState<TripStop | null>(null);
+  const [activityToEdit, setActivityToEdit] = useState<ItineraryActivity | null>(null);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
-  // Fetch Trip Details from API
+  // Delete confirmation targets
+  const [deleteTarget, setDeleteTarget] = useState<{
+    type: 'stop' | 'activity';
+    id: number;
+    title: string;
+  } | null>(null);
+
+  // Fetch Trip Details & Stops from API
   const fetchTripDetails = async () => {
     setLoading(true);
     setError(null);
@@ -49,19 +62,69 @@ export default function TripDetailsPage({ params }: { params: { id: string } }) 
     if (!trip) return;
     try {
       const createdStop = await addStop(trip.id, newStopData);
-      setStops([...stops, createdStop]);
+      setStops([...stops, { ...createdStop, activities: [] }]);
     } catch (err: any) {
       alert('Failed to add stop: ' + (err.response?.data?.message || err.message));
     }
   };
 
-  // Delete Stop Handler
-  const handleDeleteStop = async (id: number) => {
+  // Save (Add or Update) Activity Handler
+  const handleSaveActivity = async (activityData: Omit<ItineraryActivity, 'id'>, activityId?: number) => {
     try {
-      await deleteStop(id);
-      setStops(stops.filter(s => s.id !== id));
+      if (activityId) {
+        // Edit Mode
+        const updated = await updateActivity(activityId, activityData);
+        setStops(stops.map(stop => {
+          if (stop.activities?.some(a => a.id === activityId)) {
+            return {
+              ...stop,
+              activities: stop.activities.map(a => a.id === activityId ? updated : a)
+            };
+          }
+          return stop;
+        }));
+      } else {
+        // Add Mode
+        const createdActivity = await addActivity(activityData);
+        setStops(stops.map(stop => {
+          if (stop.id === activityData.trip_stop_id) {
+            const currentActivities = stop.activities || [];
+            return {
+              ...stop,
+              activities: [...currentActivities, createdActivity]
+            };
+          }
+          return stop;
+        }));
+      }
     } catch (err: any) {
-      alert('Failed to delete stop: ' + (err.response?.data?.message || err.message));
+      alert('Failed to save activity: ' + (err.response?.data?.message || err.message));
+    }
+  };
+
+  // Confirmed Delete Execution
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+    try {
+      if (deleteTarget.type === 'stop') {
+        await deleteStop(deleteTarget.id);
+        setStops(stops.filter(s => s.id !== deleteTarget.id));
+      } else if (deleteTarget.type === 'activity') {
+        await deleteActivity(deleteTarget.id);
+        setStops(stops.map(stop => {
+          if (stop.activities?.some(a => a.id === deleteTarget.id)) {
+            return {
+              ...stop,
+              activities: stop.activities.filter(a => a.id !== deleteTarget.id)
+            };
+          }
+          return stop;
+        }));
+      }
+    } catch (err: any) {
+      alert('Failed to delete item: ' + (err.response?.data?.message || err.message));
+    } finally {
+      setDeleteTarget(null);
     }
   };
 
@@ -91,6 +154,9 @@ export default function TripDetailsPage({ params }: { params: { id: string } }) 
       </div>
     );
   }
+
+  // Calculate total scheduled activities count
+  const totalActivitiesCount = stops.reduce((sum, s) => sum + (s.activities ? s.activities.length : 0), 0);
 
   return (
     <div style={{ maxWidth: '1140px', margin: '0 auto', padding: '2rem 1.5rem 4rem' }}>
@@ -159,15 +225,15 @@ export default function TripDetailsPage({ params }: { params: { id: string } }) 
 
       {/* Main Workspace Layout */}
       <div style={{ display: 'grid', gridTemplateColumns: '2.2fr 1fr', gap: '2rem' }}>
-        {/* Left Column: City Stops Timeline */}
+        {/* Left Column: City Stops & Activities Timeline */}
         <div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
             <div>
               <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#ffffff', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <MapPin size={22} color="var(--accent-teal)" />
-                City Stops Timeline
+                City Stops & Day-wise Activities Timeline
               </h2>
-              <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '0.15rem' }}>Arrival & Departure dates in <b>DD/MM/YYYY</b> format</p>
+              <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '0.15rem' }}>Arrival, departure, and activity dates in <b>DD/MM/YYYY</b> format</p>
             </div>
 
             <button onClick={() => setIsAddStopModalOpen(true)} className="btn-primary" style={{ padding: '0.65rem 1.2rem', fontSize: '0.9rem' }}>
@@ -184,7 +250,16 @@ export default function TripDetailsPage({ params }: { params: { id: string } }) 
                   key={stop.id} 
                   stop={stop} 
                   index={index} 
-                  onDeleteStop={handleDeleteStop} 
+                  onDeleteStop={(stopId) => setDeleteTarget({ type: 'stop', id: stopId, title: `Remove "${stop.city_name}" Stop?` })}
+                  onOpenAddActivityModal={(selectedStop) => {
+                    setActivityToEdit(null);
+                    setActiveStopForActivity(selectedStop);
+                  }}
+                  onOpenEditActivityModal={(selectedActivity) => {
+                    setActivityToEdit(selectedActivity);
+                    setActiveStopForActivity(null);
+                  }}
+                  onDeleteActivity={(actId) => setDeleteTarget({ type: 'activity', id: actId, title: 'Delete Scheduled Activity?' })}
                 />
               ))}
             </div>
@@ -245,6 +320,10 @@ export default function TripDetailsPage({ params }: { params: { id: string } }) 
               </li>
               <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <ShieldCheck size={16} color="var(--accent-teal)" />
+                <b>{totalActivitiesCount}</b> Day Activities Scheduled
+              </li>
+              <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <ShieldCheck size={16} color="var(--accent-teal)" />
                 Budget: <b>₹{Number(trip.total_budget || 0).toLocaleString()}</b>
               </li>
             </ul>
@@ -259,11 +338,36 @@ export default function TripDetailsPage({ params }: { params: { id: string } }) 
         onAddStop={handleAddStop} 
       />
 
+      {/* Add / Edit Activity Modal */}
+      <ActivityModal
+        isOpen={!!activeStopForActivity || !!activityToEdit}
+        tripStop={activeStopForActivity}
+        activityToEdit={activityToEdit}
+        onClose={() => {
+          setActiveStopForActivity(null);
+          setActivityToEdit(null);
+        }}
+        onSaveActivity={handleSaveActivity}
+      />
+
       {/* Share Modal */}
       <ShareModal 
         isOpen={isShareModalOpen} 
         trip={trip} 
         onClose={() => setIsShareModalOpen(false)} 
+      />
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmModal
+        isOpen={!!deleteTarget}
+        title={deleteTarget?.title || 'Confirm Deletion'}
+        message={
+          deleteTarget?.type === 'stop'
+            ? 'Are you sure you want to remove this city stop and all its scheduled activities? This action cannot be undone.'
+            : 'Are you sure you want to delete this scheduled activity? This action cannot be undone.'
+        }
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleConfirmDelete}
       />
     </div>
   );

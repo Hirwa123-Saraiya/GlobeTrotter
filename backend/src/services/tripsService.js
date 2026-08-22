@@ -29,6 +29,18 @@ function formatStopDates(stop) {
 }
 
 /**
+ * Format activity object dates to DD/MM/YYYY
+ */
+function formatActivityDates(activity) {
+  if (!activity) return null;
+  return {
+    ...activity,
+    scheduled_date: formatToDDMMYYYY(activity.scheduled_date),
+    created_at: formatToDDMMYYYY(activity.created_at)
+  };
+}
+
+/**
  * Calculate Trip Health Score (0 - 100)
  */
 function calculateTripHealthScore(trip, stops = []) {
@@ -94,7 +106,7 @@ class TripsService {
   }
 
   /**
-   * Fetch trip details with stops and health score
+   * Fetch trip details with stops, itinerary activities, and health score
    */
   async getTripById(tripId, userId) {
     const tripRes = await pool.query('SELECT * FROM trips WHERE id = $1', [tripId]);
@@ -115,7 +127,18 @@ class TripsService {
       'SELECT * FROM trip_stops WHERE trip_id = $1 ORDER BY sequence_order ASC, arrival_date ASC',
       [tripId]
     );
-    const stops = stopsRes.rows.map(formatStopDates);
+
+    // Fetch itinerary activities for each stop
+    const stops = [];
+    for (let rawStop of stopsRes.rows) {
+      const activitiesRes = await pool.query(
+        'SELECT * FROM itinerary_activities WHERE trip_stop_id = $1 ORDER BY sequence_order ASC, scheduled_date ASC',
+        [rawStop.id]
+      );
+      const formattedStop = formatStopDates(rawStop);
+      formattedStop.activities = activitiesRes.rows.map(formatActivityDates);
+      stops.push(formattedStop);
+    }
 
     const formattedTrip = formatTripDates(rawTrip);
     const healthScore = calculateTripHealthScore(formattedTrip, stops);
@@ -256,14 +279,28 @@ class TripsService {
       const newTripRes = await client.query(newTripQuery, newTripValues);
       const newTrip = newTripRes.rows[0];
 
-      // Clone trip stops
+      // Clone trip stops and activities
       const origStopsRes = await client.query('SELECT * FROM trip_stops WHERE trip_id = $1 ORDER BY sequence_order ASC', [tripId]);
       for (let origStop of origStopsRes.rows) {
-        await client.query(
+        const newStopRes = await client.query(
           `INSERT INTO trip_stops (trip_id, city_name, arrival_date, departure_date, sequence_order)
-           VALUES ($1, $2, $3, $4, $5)`,
+           VALUES ($1, $2, $3, $4, $5) RETURNING id`,
           [newTrip.id, origStop.city_name, origStop.arrival_date, origStop.departure_date, origStop.sequence_order]
         );
+        const newStopId = newStopRes.rows[0].id;
+
+        // Clone activities under each stop
+        const origActivitiesRes = await client.query(
+          'SELECT * FROM itinerary_activities WHERE trip_stop_id = $1 ORDER BY sequence_order ASC',
+          [origStop.id]
+        );
+        for (let origAct of origActivitiesRes.rows) {
+          await client.query(
+            `INSERT INTO itinerary_activities (trip_stop_id, custom_title, category, scheduled_date, start_time, end_time, custom_cost, notes, sequence_order)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+            [newStopId, origAct.custom_title, origAct.category, origAct.scheduled_date, origAct.start_time, origAct.end_time, origAct.custom_cost, origAct.notes, origAct.sequence_order]
+          );
+        }
       }
 
       await client.query('COMMIT');
