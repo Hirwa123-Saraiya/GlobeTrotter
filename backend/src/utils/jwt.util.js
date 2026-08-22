@@ -1,8 +1,12 @@
 require('dotenv').config();
 const jwt = require('jsonwebtoken');
 
-const ACCESS_SECRET = process.env.JWT_SECRET || 'supersecret_jwt_key_globetrotter';
-const REFRESH_SECRET = process.env.JWT_SECRET || 'supersecret_jwt_key_globetrotter';
+const ACCESS_SECRET = process.env.JWT_SECRET || process.env.JWT_ACCESS_SECRET;
+const REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET;
+
+if (!ACCESS_SECRET) {
+  throw new Error('FATAL: JWT_SECRET environment variable is missing.');
+}
 
 const generateAccessToken = (payload) =>
   jwt.sign(payload, ACCESS_SECRET, { expiresIn: process.env.JWT_ACCESS_EXPIRES_IN || '15m' });
