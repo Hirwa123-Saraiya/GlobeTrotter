@@ -3,12 +3,33 @@ const crypto = require('crypto');
 const { formatToDDMMYYYY, parseDDMMYYYYToISO } = require('../utils/dateFormatter');
 
 /**
- * Format trip object dates to DD/MM/YYYY
+ * Format trip object dates to DD/MM/YYYY and compute live trip status (planning, ongoing, completed)
  */
 function formatTripDates(trip) {
   if (!trip) return null;
+
+  let computedStatus = trip.status || 'planning';
+  if (trip.start_date && trip.end_date) {
+    const now = new Date();
+    // Midnight UTC today for accurate date comparisons
+    const today = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+    const startDate = new Date(trip.start_date);
+    const endDate = new Date(trip.end_date);
+
+    if (!isNaN(startDate.getTime()) && !isNaN(endDate.getTime())) {
+      if (today < startDate) {
+        computedStatus = 'planning';
+      } else if (today >= startDate && today <= endDate) {
+        computedStatus = 'ongoing';
+      } else if (today > endDate) {
+        computedStatus = 'completed';
+      }
+    }
+  }
+
   return {
     ...trip,
+    status: computedStatus,
     start_date: formatToDDMMYYYY(trip.start_date),
     end_date: formatToDDMMYYYY(trip.end_date),
     created_at: formatToDDMMYYYY(trip.created_at)
@@ -25,6 +46,18 @@ function formatStopDates(stop) {
     arrival_date: formatToDDMMYYYY(stop.arrival_date),
     departure_date: formatToDDMMYYYY(stop.departure_date),
     created_at: formatToDDMMYYYY(stop.created_at)
+  };
+}
+
+/**
+ * Format activity object dates to DD/MM/YYYY
+ */
+function formatActivityDates(activity) {
+  if (!activity) return null;
+  return {
+    ...activity,
+    scheduled_date: formatToDDMMYYYY(activity.scheduled_date),
+    created_at: formatToDDMMYYYY(activity.created_at)
   };
 }
 
@@ -65,7 +98,7 @@ class TripsService {
    * Create a new trip (supports DD/MM/YYYY dates)
    */
   async createTrip(userId, tripData) {
-    const { name, description, start_date, end_date, total_budget, vibe, cover_image } = tripData;
+    const { name, description, start_date, end_date, total_budget, vibe, cover_image, status } = tripData;
     const shareToken = crypto.randomBytes(16).toString('hex');
     
     // Parse DD/MM/YYYY dates to ISO for DB insertion
@@ -73,8 +106,8 @@ class TripsService {
     const isoEndDate = parseDDMMYYYYToISO(end_date);
 
     const query = `
-      INSERT INTO trips (user_id, name, description, start_date, end_date, total_budget, vibe, cover_image, share_token)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      INSERT INTO trips (user_id, name, description, start_date, end_date, total_budget, vibe, cover_image, status, share_token)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
       RETURNING *
     `;
     const values = [
@@ -86,6 +119,7 @@ class TripsService {
       total_budget || 0.00,
       vibe || 'Balanced',
       cover_image || 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=1200&q=80',
+      status || 'planning',
       shareToken
     ];
 
@@ -94,7 +128,7 @@ class TripsService {
   }
 
   /**
-   * Fetch trip details with stops and health score
+   * Fetch trip details with stops, itinerary activities, and health score
    */
   async getTripById(tripId, userId) {
     const tripRes = await pool.query('SELECT * FROM trips WHERE id = $1', [tripId]);
@@ -115,7 +149,18 @@ class TripsService {
       'SELECT * FROM trip_stops WHERE trip_id = $1 ORDER BY sequence_order ASC, arrival_date ASC',
       [tripId]
     );
-    const stops = stopsRes.rows.map(formatStopDates);
+
+    // Fetch itinerary activities for each stop
+    const stops = [];
+    for (let rawStop of stopsRes.rows) {
+      const activitiesRes = await pool.query(
+        'SELECT * FROM itinerary_activities WHERE trip_stop_id = $1 ORDER BY sequence_order ASC, scheduled_date ASC',
+        [rawStop.id]
+      );
+      const formattedStop = formatStopDates(rawStop);
+      formattedStop.activities = activitiesRes.rows.map(formatActivityDates);
+      stops.push(formattedStop);
+    }
 
     const formattedTrip = formatTripDates(rawTrip);
     const healthScore = calculateTripHealthScore(formattedTrip, stops);
@@ -200,14 +245,16 @@ class TripsService {
       shareToken = crypto.randomBytes(16).toString('hex');
     }
 
+    const targetPublicState = isPublic !== undefined ? Boolean(isPublic) : true;
+
     const query = `
       UPDATE trips
-      SET is_public = COALESCE($1, NOT is_public),
+      SET is_public = $1,
           share_token = $2
       WHERE id = $3
       RETURNING id, name, is_public, share_token
     `;
-    const { rows } = await pool.query(query, [isPublic, shareToken, tripId]);
+    const { rows } = await pool.query(query, [targetPublicState, shareToken, tripId]);
     return rows[0];
   }
 
@@ -253,14 +300,27 @@ class TripsService {
       const newTripRes = await client.query(newTripQuery, newTripValues);
       const newTrip = newTripRes.rows[0];
 
-      // Clone trip stops
+      // Clone trip stops and activities
       const origStopsRes = await client.query('SELECT * FROM trip_stops WHERE trip_id = $1 ORDER BY sequence_order ASC', [tripId]);
       for (let origStop of origStopsRes.rows) {
-        await client.query(
+        const newStopRes = await client.query(
           `INSERT INTO trip_stops (trip_id, city_name, arrival_date, departure_date, sequence_order)
-           VALUES ($1, $2, $3, $4, $5)`,
+           VALUES ($1, $2, $3, $4, $5) RETURNING id`,
           [newTrip.id, origStop.city_name, origStop.arrival_date, origStop.departure_date, origStop.sequence_order]
         );
+        const newStopId = newStopRes.rows[0].id;
+
+        const origActivitiesRes = await client.query(
+          'SELECT * FROM itinerary_activities WHERE trip_stop_id = $1 ORDER BY sequence_order ASC',
+          [origStop.id]
+        );
+        for (let origAct of origActivitiesRes.rows) {
+          await client.query(
+            `INSERT INTO itinerary_activities (trip_stop_id, custom_title, category, scheduled_date, start_time, end_time, custom_cost, notes, sequence_order)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+            [newStopId, origAct.custom_title, origAct.category, origAct.scheduled_date, origAct.start_time, origAct.end_time, origAct.custom_cost, origAct.notes, origAct.sequence_order]
+          );
+        }
       }
 
       await client.query('COMMIT');

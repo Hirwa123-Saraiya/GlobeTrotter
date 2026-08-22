@@ -8,6 +8,8 @@ const swaggerUi = require('swagger-ui-express');
 const swaggerSpec = require('./config/swagger');
 const tripRoutes = require('./routes/tripRoutes');
 const stopRoutes = require('./routes/stopRoutes');
+const itineraryRoutes = require('./routes/itineraryRoutes');
+const budgetRoutes = require('./routes/budgetRoutes');
 const { connectDB } = require('./config/db');
 const routes = require('./routes');
 const { errorHandler, notFound } = require('./middlewares/error.middleware');
@@ -40,17 +42,19 @@ app.use(cookieParser());
 // Swagger OpenAPI Documentation Route
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
-// API Routes
-app.use('/api/trips', tripRoutes);
-app.use('/api', stopRoutes);
-
 // Health Check Route
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'GlobeTrotter API is running' });
 });
 
-// API routes
+// Primary Auth & Core Routes
 app.use('/api', routes);
+
+// Sub-feature Routes
+app.use('/api/trips', tripRoutes);
+app.use('/api/itinerary-activities', itineraryRoutes);
+app.use('/api', budgetRoutes);
+app.use('/api', stopRoutes);
 
 // 404 + centralized error handling (must be last)
 app.use(notFound);
