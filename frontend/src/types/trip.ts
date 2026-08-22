@@ -2,7 +2,7 @@ export interface ItineraryActivity {
   id: number;
   trip_stop_id: number;
   custom_title: string;
-  category?: string; // Sightseeing, Food, Adventure, Culture, Relaxation, Transport, Shopping
+  category?: string; // Sightseeing, Food & Dining, Adventure, Culture & Heritage, Relaxation, Shopping, Transport
   scheduled_date: string; // DD/MM/YYYY
   start_time?: string; // e.g. "09:30 AM"
   end_time?: string; // e.g. "12:00 PM"
@@ -21,6 +21,38 @@ export interface TripStop {
   sequence_order: number;
   activities?: ItineraryActivity[];
   created_at?: string;
+}
+
+export interface Expense {
+  id: number;
+  trip_id: number;
+  category: 'Transport' | 'Accommodation' | 'Meals' | 'Activities' | 'Misc' | string;
+  amount: number;
+  description?: string;
+  expense_date: string; // DD/MM/YYYY
+  created_at?: string;
+}
+
+export interface CategoryBreakdown {
+  category: string;
+  amount: number;
+  percentage: number;
+}
+
+export interface BudgetAnalytics {
+  trip_id: number;
+  trip_name: string;
+  start_date: string;
+  end_date: string;
+  total_days: number;
+  total_budget: number;
+  total_spent: number;
+  remaining_budget: number;
+  is_over_budget: boolean;
+  over_budget_amount: number;
+  daily_average: number;
+  category_breakdown: CategoryBreakdown[];
+  expenses: Expense[];
 }
 
 export interface Trip {

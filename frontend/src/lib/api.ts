@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { Trip, TripStop, ItineraryActivity } from '../types/trip';
+import { Trip, TripStop, ItineraryActivity, Expense, BudgetAnalytics } from '../types/trip';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
@@ -188,4 +188,51 @@ export async function reorderActivities(
     activities,
   });
   return response.data.data || response.data;
+}
+
+/* ============================================================================
+ * BUDGET & EXPENSE LOGGING API SERVICES
+ * ============================================================================ */
+
+/**
+ * Fetch aggregated budget analytics for a trip
+ */
+export async function getBudgetAnalytics(tripId: string | number): Promise<BudgetAnalytics> {
+  const response = await apiClient.get(`/trips/${tripId}/budget`);
+  return response.data.data || response.data;
+}
+
+/**
+ * Log a new expense under a trip
+ */
+export async function logExpense(
+  tripId: string | number,
+  expenseData: {
+    category: string;
+    amount: number;
+    description?: string;
+    expense_date: string; // DD/MM/YYYY
+  }
+): Promise<Expense> {
+  const response = await apiClient.post(`/trips/${tripId}/expenses`, expenseData);
+  return response.data.data || response.data;
+}
+
+/**
+ * Update a logged expense
+ */
+export async function updateExpense(
+  expenseId: string | number,
+  updateData: Partial<Expense>
+): Promise<Expense> {
+  const response = await apiClient.put(`/expenses/${expenseId}`, updateData);
+  return response.data.data || response.data;
+}
+
+/**
+ * Delete a logged expense
+ */
+export async function deleteExpense(expenseId: string | number): Promise<boolean> {
+  const response = await apiClient.delete(`/expenses/${expenseId}`);
+  return response.data.success ?? true;
 }

@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { 
   ArrowLeft, Calendar, MapPin, DollarSign, Share2, Plus, Sparkles, 
-  CheckCircle2, ShieldCheck, RefreshCw, AlertCircle 
+  CheckCircle2, ShieldCheck, RefreshCw, AlertCircle, PieChart 
 } from 'lucide-react';
 import StopCard from '../../../components/StopCard';
 import AddStopModal from '../../../components/AddStopModal';
@@ -180,8 +180,13 @@ export default function TripDetailsPage({ params }: { params: { id: string } }) 
             background: 'linear-gradient(to top, rgba(7, 9, 19, 0.95) 0%, rgba(7, 9, 19, 0.3) 60%, transparent 100%)'
           }} />
 
-          {/* Share Button Overlay */}
+          {/* Action Buttons Overlay */}
           <div style={{ position: 'absolute', top: '1.25rem', right: '1.25rem', display: 'flex', gap: '0.6rem', zIndex: 2 }}>
+            <Link href={`/trips/${trip.id}/budget`} className="btn-primary" style={{ padding: '0.6rem 1.1rem', fontSize: '0.85rem', background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)', boxShadow: '0 4px 14px rgba(245, 158, 11, 0.4)' }}>
+              <PieChart size={16} />
+              Budget & Expenses
+            </Link>
+
             <button onClick={() => setIsShareModalOpen(true)} className="btn-secondary" style={{ background: 'rgba(7, 9, 19, 0.65)', backdropFilter: 'blur(10px)' }}>
               <Share2 size={16} />
               Share Public Link
