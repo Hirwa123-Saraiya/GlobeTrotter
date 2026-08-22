@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { 
   ArrowLeft, Calendar, MapPin, DollarSign, Share2, Plus, Sparkles, 
   CheckCircle2, ShieldCheck, RefreshCw, AlertCircle, PieChart 
@@ -15,6 +16,7 @@ import { Trip, TripStop, ItineraryActivity } from '../../../types/trip';
 import { getTripById, addStop, deleteStop, shareTrip, addActivity, updateActivity, deleteActivity } from '../../../lib/api';
 
 export default function TripDetailsPage({ params }: { params: { id: string } }) {
+  const router = useRouter();
   const [trip, setTrip] = useState<Trip | null>(null);
   const [stops, setStops] = useState<TripStop[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -47,6 +49,10 @@ export default function TripDetailsPage({ params }: { params: { id: string } }) 
       }
     } catch (err: any) {
       console.error('API getTripById failed:', err.message);
+      if (err.response?.status === 401) {
+        router.push('/login');
+        return;
+      }
       setError(err.response?.data?.message || 'Failed to load trip from database.');
     } finally {
       setLoading(false);
@@ -221,7 +227,7 @@ export default function TripDetailsPage({ params }: { params: { id: string } }) 
         </div>
 
         {/* Description Body */}
-        <div style={{ padding: '1.5rem 2rem', background: 'rgba(15, 23, 42, 0.6)' }}>
+        <div style={{ padding: '1.5rem 2rem', background: 'var(--bg-card)' }}>
           <p style={{ fontSize: '0.98rem', color: 'var(--text-muted)', lineHeight: '1.65' }}>
             {trip.description || 'No description provided.'}
           </p>
@@ -234,7 +240,7 @@ export default function TripDetailsPage({ params }: { params: { id: string } }) 
         <div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
             <div>
-              <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#ffffff', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <MapPin size={22} color="var(--accent-teal)" />
                 City Stops & Day-wise Activities Timeline
               </h2>
@@ -285,7 +291,7 @@ export default function TripDetailsPage({ params }: { params: { id: string } }) 
           {/* Trip Health Score Box */}
           <div className="glass-card" style={{ padding: '1.75rem', marginBottom: '1.5rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.1rem' }}>
-              <h3 style={{ fontSize: '1.15rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+              <h3 style={{ fontSize: '1.15rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.45rem', color: 'var(--text-main)' }}>
                 <Sparkles size={20} color="var(--accent-amber)" />
                 Trip Health Score
               </h3>

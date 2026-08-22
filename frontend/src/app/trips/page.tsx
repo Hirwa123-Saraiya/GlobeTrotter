@@ -1,15 +1,17 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Plus, Search, Compass, Sparkles, MapPin, DollarSign, RefreshCw, AlertCircle } from 'lucide-react';
 import TripCard from '../../components/TripCard';
 import CreateTripModal from '../../components/CreateTripModal';
 import ShareModal from '../../components/ShareModal';
 import DeleteConfirmModal from '../../components/DeleteConfirmModal';
 import { Trip } from '../../types/trip';
-import { getTrips, createTrip, deleteTrip } from '../../lib/api';
+import { getTrips, createTrip, deleteTrip, getCurrentUser } from '../../lib/api';
 
 export default function TripsPage() {
+  const router = useRouter();
   const [trips, setTrips] = useState<Trip[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -24,6 +26,8 @@ export default function TripsPage() {
     setLoading(true);
     setError(null);
     try {
+      // First verify active login session
+      await getCurrentUser();
       const fetchedTrips = await getTrips();
       if (Array.isArray(fetchedTrips)) {
         setTrips(fetchedTrips);
@@ -31,9 +35,13 @@ export default function TripsPage() {
         setTrips([]);
       }
     } catch (err: any) {
-      console.error('Failed to fetch trips from API:', err.message);
-      setError('Please log in to view your real database trips.');
+      console.warn('Authentication required, redirecting to /login:', err.message);
+      setError('Authentication required. Redirecting to login...');
       setTrips([]);
+      // Redirect to login page
+      setTimeout(() => {
+        router.push('/login');
+      }, 600);
     } finally {
       setLoading(false);
     }
@@ -98,7 +106,7 @@ export default function TripsPage() {
             <Sparkles size={14} />
             GlobeTrotter Workspace
           </div>
-          <h1 style={{ fontSize: '2.4rem', fontWeight: 800, color: '#ffffff', letterSpacing: '-0.02em' }}>
+          <h1 style={{ fontSize: '2.4rem', fontWeight: 800, color: 'var(--text-main)', letterSpacing: '-0.02em' }}>
             My Travel Itineraries
           </h1>
           <p style={{ fontSize: '0.95rem', color: 'var(--text-muted)', marginTop: '0.35rem' }}>
@@ -133,7 +141,7 @@ export default function TripsPage() {
           color: '#fbbf24'
         }}>
           <AlertCircle size={18} />
-          <span><b>Authentication Required:</b> Please log in via <b>http://localhost:5000/api-docs</b> to view and manage your real database trips.</span>
+          <span><b>Authentication Required:</b> Redirecting to login page...</span>
         </div>
       )}
 
@@ -145,7 +153,7 @@ export default function TripsPage() {
           </div>
           <div>
             <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>TOTAL TRIPS</span>
-            <h3 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#ffffff' }}>{trips.length}</h3>
+            <h3 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-main)' }}>{trips.length}</h3>
           </div>
         </div>
 
@@ -155,7 +163,7 @@ export default function TripsPage() {
           </div>
           <div>
             <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>PLANNED CITIES</span>
-            <h3 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#ffffff' }}>{totalStopsCombined}</h3>
+            <h3 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-main)' }}>{totalStopsCombined}</h3>
           </div>
         </div>
 
@@ -165,7 +173,7 @@ export default function TripsPage() {
           </div>
           <div>
             <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>TOTAL BUDGET</span>
-            <h3 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#ffffff' }}>₹{totalBudgetCombined.toLocaleString()}</h3>
+            <h3 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-main)' }}>₹{totalBudgetCombined.toLocaleString()}</h3>
           </div>
         </div>
       </div>
@@ -186,7 +194,7 @@ export default function TripsPage() {
         </div>
 
         {/* Status Tabs */}
-        <div style={{ display: 'flex', alignItems: 'center', background: 'rgba(11, 15, 25, 0.7)', padding: '0.35rem', borderRadius: '0.85rem', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', background: 'var(--bg-card)', padding: '0.35rem', borderRadius: '0.85rem', border: '1px solid var(--border-card)' }}>
           {['all', 'planning', 'ongoing', 'completed'].map((status) => (
             <button
               key={status}
@@ -202,7 +210,7 @@ export default function TripsPage() {
                 textTransform: 'capitalize',
                 cursor: 'pointer',
                 transition: 'all 0.2s ease',
-                boxShadow: selectedStatus === status ? '0 4px 12px rgba(99, 102, 241, 0.4)' : 'none'
+                boxShadow: selectedStatus === status ? '0 4px 12px var(--primary-glow)' : 'none'
               }}
             >
               {status}
@@ -234,7 +242,7 @@ export default function TripsPage() {
           <div style={{ width: '64px', height: '64px', borderRadius: '20px', background: 'rgba(99, 102, 241, 0.15)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem', boxShadow: '0 8px 20px rgba(99, 102, 241, 0.25)' }}>
             <Compass size={32} />
           </div>
-          <h3 style={{ fontSize: '1.4rem', fontWeight: 800, marginBottom: '0.5rem' }}>No Trips Found</h3>
+          <h3 style={{ fontSize: '1.4rem', fontWeight: 800, marginBottom: '0.5rem', color: 'var(--text-main)' }}>No Trips Found</h3>
           <p style={{ fontSize: '0.92rem', color: 'var(--text-muted)', marginBottom: '1.75rem', lineHeight: '1.5' }}>
             {trips.length === 0 
               ? 'You have no trips in your database. Click below to create your first itinerary!'

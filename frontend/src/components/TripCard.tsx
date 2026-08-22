@@ -93,10 +93,10 @@ export default function TripCard({ trip, onDelete, onShare }: TripCardProps) {
           display: 'grid',
           gridTemplateColumns: '1fr 1fr',
           gap: '0.75rem',
-          background: 'rgba(11, 15, 25, 0.6)',
+          background: 'var(--bg-card)',
           padding: '0.75rem 0.9rem',
           borderRadius: '0.75rem',
-          border: '1px solid rgba(255, 255, 255, 0.06)',
+          border: '1px solid var(--border-card)',
           marginBottom: '1.2rem'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -105,7 +105,7 @@ export default function TripCard({ trip, onDelete, onShare }: TripCardProps) {
             </div>
             <div>
               <span style={{ fontSize: '0.65rem', display: 'block', color: 'var(--text-dim)', fontWeight: 600, letterSpacing: '0.05em' }}>CITY STOPS</span>
-              <span style={{ fontSize: '0.88rem', fontWeight: 800, color: '#ffffff' }}>{stopCount} {stopCount === 1 ? 'City' : 'Cities'}</span>
+              <span style={{ fontSize: '0.88rem', fontWeight: 800, color: 'var(--text-main)' }}>{stopCount} {stopCount === 1 ? 'City' : 'Cities'}</span>
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -114,21 +114,21 @@ export default function TripCard({ trip, onDelete, onShare }: TripCardProps) {
             </div>
             <div>
               <span style={{ fontSize: '0.65rem', display: 'block', color: 'var(--text-dim)', fontWeight: 600, letterSpacing: '0.05em' }}>BUDGET</span>
-              <span style={{ fontSize: '0.88rem', fontWeight: 800, color: '#ffffff' }}>₹{Number(trip.total_budget || 0).toLocaleString()}</span>
+              <span style={{ fontSize: '0.88rem', fontWeight: 800, color: 'var(--text-main)' }}>₹{Number(trip.total_budget || 0).toLocaleString()}</span>
             </div>
           </div>
         </div>
 
         {/* Actions Footer */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: '0.6rem', borderTop: '1px solid rgba(255, 255, 255, 0.06)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: '0.6rem', borderTop: '1px solid var(--border-card)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
             {onShare && (
               <button 
                 onClick={() => onShare(trip)} 
                 title="Share Public Link"
                 style={{
-                  background: 'rgba(255, 255, 255, 0.05)',
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  background: 'var(--bg-card)',
+                  border: '1px solid var(--border-card)',
                   color: 'var(--text-muted)',
                   padding: '0.5rem',
                   borderRadius: '0.6rem',

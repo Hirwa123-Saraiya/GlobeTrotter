@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { API_BASE_URL } from '@/lib/api';
+import { apiClient } from '@/lib/api';
 import '@/styles/auth.css';
 
 export default function ForgotPasswordPage() {
@@ -17,20 +17,14 @@ export default function ForgotPasswordPage() {
     setLoading(true);
 
     try {
-      const res = await fetch(`${API_BASE_URL}/auth/forgot-password`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
-      });
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.message || 'Something went wrong');
+      const res = await apiClient.post('/auth/forgot-password', { email });
+      if (res.data.success) {
+        router.push(`/reset-password?email=${encodeURIComponent(email)}`);
+      } else {
+        setError(res.data.message || 'Something went wrong');
       }
-
-      router.push(`/reset-password?email=${encodeURIComponent(email)}`);
     } catch (err) {
-      setError(err.message);
+      setError(err.response?.data?.message || err.message || 'Something went wrong');
     } finally {
       setLoading(false);
     }
@@ -45,15 +39,15 @@ export default function ForgotPasswordPage() {
       </div>
 
       <form className="auth-card" onSubmit={handleSubmit}>
-        <h1>Forgot password?</h1>
+        <h1>Forgot Password?</h1>
         <p className="auth-card-tagline">
-          Enter your email and we&apos;ll send you a 6-digit code to reset it.
+          Enter your email and we&apos;ll send you a password reset code.
         </p>
 
         {error && <p className="auth-error">{error}</p>}
 
         <div className="auth-field">
-          <label htmlFor="email">Email</label>
+          <label htmlFor="email">Email Address</label>
           <input
             id="email"
             name="email"
@@ -66,11 +60,11 @@ export default function ForgotPasswordPage() {
         </div>
 
         <button className="auth-submit" type="submit" disabled={loading}>
-          {loading ? 'Sending code...' : 'Send reset code'}
+          {loading ? 'Sending Code...' : 'Send Reset Code'}
         </button>
 
         <p className="auth-switch">
-          Remembered your password? <a href="/login">Login</a>
+          Remembered your password? <a href="/login">Sign in</a>
         </p>
       </form>
     </main>

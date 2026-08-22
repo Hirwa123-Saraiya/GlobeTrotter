@@ -4,11 +4,6 @@ const budgetController = require('../controllers/budgetController');
 const { protect } = require('../middlewares/auth.middleware');
 
 /**
- * All budget and expense endpoints require authentication via JWT cookie
- */
-router.use(protect);
-
-/**
  * @swagger
  * tags:
  *   name: Budget & Expenses
@@ -38,7 +33,7 @@ router.use(protect);
  *       404:
  *         description: Trip not found
  */
-router.get('/trips/:id/budget', budgetController.getBudgetAnalytics);
+router.get('/trips/:id/budget', protect, budgetController.getBudgetAnalytics);
 
 /**
  * @swagger
@@ -88,7 +83,7 @@ router.get('/trips/:id/budget', budgetController.getBudgetAnalytics);
  *       401:
  *         description: Unauthorized
  */
-router.post('/trips/:id/expenses', budgetController.logExpense);
+router.post('/trips/:id/expenses', protect, budgetController.logExpense);
 
 /**
  * @swagger
@@ -131,7 +126,7 @@ router.post('/trips/:id/expenses', budgetController.logExpense);
  *       404:
  *         description: Expense not found
  */
-router.put('/expenses/:id', budgetController.updateExpense);
+router.put('/expenses/:id', protect, budgetController.updateExpense);
 
 /**
  * @swagger
@@ -154,6 +149,6 @@ router.put('/expenses/:id', budgetController.updateExpense);
  *       404:
  *         description: Expense not found
  */
-router.delete('/expenses/:id', budgetController.deleteExpense);
+router.delete('/expenses/:id', protect, budgetController.deleteExpense);
 
 module.exports = router;

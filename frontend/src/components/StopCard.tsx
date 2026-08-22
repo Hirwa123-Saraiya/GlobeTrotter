@@ -46,7 +46,7 @@ export default function StopCard({
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <MapPin size={18} color="var(--accent-teal)" />
-              <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#ffffff' }}>{stop.city_name}</h3>
+              <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-main)' }}>{stop.city_name}</h3>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.82rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
               <Calendar size={13} color="var(--primary)" />
@@ -90,8 +90,8 @@ export default function StopCard({
                 <div 
                   key={act.id} 
                   style={{
-                    background: 'rgba(11, 15, 25, 0.7)',
-                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                    background: 'var(--bg-card)',
+                    border: '1px solid var(--border-card)',
                     borderRadius: '0.75rem',
                     padding: '0.85rem 1rem',
                     display: 'flex',
@@ -115,7 +115,7 @@ export default function StopCard({
                       }}>
                         {act.category || 'Sightseeing'}
                       </span>
-                      <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#ffffff' }}>{act.custom_title}</h4>
+                      <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-main)' }}>{act.custom_title}</h4>
                     </div>
 
                     <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', fontSize: '0.8rem', color: 'var(--text-muted)', flexWrap: 'wrap' }}>
@@ -130,7 +130,7 @@ export default function StopCard({
                         </span>
                       )}
                       {Number(act.custom_cost || 0) > 0 && (
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: '#fcd34d', fontWeight: 600 }}>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: 'var(--accent-amber)', fontWeight: 600 }}>
                           <DollarSign size={13} color="var(--accent-amber)" />
                           ₹{Number(act.custom_cost).toLocaleString()}
                         </span>
@@ -174,8 +174,8 @@ export default function StopCard({
           <div style={{
             marginTop: '1rem',
             padding: '0.85rem 1rem',
-            background: 'rgba(11, 15, 25, 0.4)',
-            border: '1px dashed rgba(255, 255, 255, 0.1)',
+            background: 'var(--bg-card)',
+            border: '1px dashed var(--border-card)',
             borderRadius: '0.75rem',
             textAlign: 'center',
             fontSize: '0.82rem',

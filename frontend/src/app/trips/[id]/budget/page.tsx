@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { 
   ArrowLeft, DollarSign, AlertTriangle, TrendingUp, Calendar, Plus, 
   Trash2, Edit2, ShieldCheck, RefreshCw, PieChart, Sparkles, AlertCircle, Edit3
@@ -20,6 +21,7 @@ const CATEGORY_COLORS: Record<string, { bg: string; color: string; border: strin
 };
 
 export default function TripBudgetPage({ params }: { params: { id: string } }) {
+  const router = useRouter();
   const [analytics, setAnalytics] = useState<BudgetAnalytics | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -38,6 +40,10 @@ export default function TripBudgetPage({ params }: { params: { id: string } }) {
       setAnalytics(data);
     } catch (err: any) {
       console.error('Failed to fetch budget analytics:', err.message);
+      if (err.response?.status === 401) {
+        router.push('/login');
+        return;
+      }
       setError(err.response?.data?.message || 'Failed to load trip budget from database.');
     } finally {
       setLoading(false);
@@ -136,7 +142,7 @@ export default function TripBudgetPage({ params }: { params: { id: string } }) {
             <Sparkles size={14} />
             Budget Intelligence Engine
           </div>
-          <h1 style={{ fontSize: '2.2rem', fontWeight: 800, color: '#ffffff', letterSpacing: '-0.02em' }}>
+          <h1 style={{ fontSize: '2.2rem', fontWeight: 800, color: 'var(--text-main)', letterSpacing: '-0.02em' }}>
             {analytics.trip_name} — Expense Tracker
           </h1>
           <p style={{ fontSize: '0.88rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
@@ -198,7 +204,7 @@ export default function TripBudgetPage({ params }: { params: { id: string } }) {
           <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
             TARGET BUDGET
           </span>
-          <h3 style={{ fontSize: '1.8rem', fontWeight: 800, color: '#ffffff', marginTop: '0.4rem' }}>
+          <h3 style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--text-main)', marginTop: '0.4rem' }}>
             ₹{Number(analytics.total_budget).toLocaleString()}
           </h3>
         </div>
@@ -239,7 +245,7 @@ export default function TripBudgetPage({ params }: { params: { id: string } }) {
         {/* Left Column: Category Spending Breakdown */}
         <div>
           <div className="glass-card" style={{ padding: '1.75rem', marginBottom: '2rem' }}>
-            <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#ffffff', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--text-main)', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <PieChart size={20} color="var(--primary)" />
               Category Spending Allocation
             </h3>
@@ -254,7 +260,7 @@ export default function TripBudgetPage({ params }: { params: { id: string } }) {
                         <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: catStyle.bar }} />
                         {cat.category}
                       </span>
-                      <span style={{ fontWeight: 700, color: '#ffffff' }}>
+                      <span style={{ fontWeight: 700, color: 'var(--text-main)' }}>
                         ₹{Number(cat.amount).toLocaleString()} <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>({cat.percentage}%)</span>
                       </span>
                     </div>
@@ -279,7 +285,7 @@ export default function TripBudgetPage({ params }: { params: { id: string } }) {
         {/* Right Column: Logged Expense History */}
         <div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
-            <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#ffffff', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <DollarSign size={20} color="var(--accent-amber)" />
               Expense History ({analytics.expenses.length})
             </h3>
@@ -312,13 +318,13 @@ export default function TripBudgetPage({ params }: { params: { id: string } }) {
                           {exp.expense_date}
                         </span>
                       </div>
-                      <p style={{ fontSize: '0.92rem', fontWeight: 600, color: '#ffffff' }}>
+                      <p style={{ fontSize: '0.92rem', fontWeight: 600, color: 'var(--text-main)' }}>
                         {exp.description || `${exp.category} expense`}
                       </p>
                     </div>
 
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
-                      <span style={{ fontSize: '1.1rem', fontWeight: 800, color: '#fcd34d' }}>
+                      <span style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--accent-amber)' }}>
                         ₹{Number(exp.amount).toLocaleString()}
                       </span>
                       

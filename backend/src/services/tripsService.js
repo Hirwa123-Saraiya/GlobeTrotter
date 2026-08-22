@@ -3,12 +3,33 @@ const crypto = require('crypto');
 const { formatToDDMMYYYY, parseDDMMYYYYToISO } = require('../utils/dateFormatter');
 
 /**
- * Format trip object dates to DD/MM/YYYY
+ * Format trip object dates to DD/MM/YYYY and compute live trip status (planning, ongoing, completed)
  */
 function formatTripDates(trip) {
   if (!trip) return null;
+
+  let computedStatus = trip.status || 'planning';
+  if (trip.start_date && trip.end_date) {
+    const now = new Date();
+    // Midnight UTC today for accurate date comparisons
+    const today = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+    const startDate = new Date(trip.start_date);
+    const endDate = new Date(trip.end_date);
+
+    if (!isNaN(startDate.getTime()) && !isNaN(endDate.getTime())) {
+      if (today < startDate) {
+        computedStatus = 'planning';
+      } else if (today >= startDate && today <= endDate) {
+        computedStatus = 'ongoing';
+      } else if (today > endDate) {
+        computedStatus = 'completed';
+      }
+    }
+  }
+
   return {
     ...trip,
+    status: computedStatus,
     start_date: formatToDDMMYYYY(trip.start_date),
     end_date: formatToDDMMYYYY(trip.end_date),
     created_at: formatToDDMMYYYY(trip.created_at)
@@ -77,7 +98,7 @@ class TripsService {
    * Create a new trip (supports DD/MM/YYYY dates)
    */
   async createTrip(userId, tripData) {
-    const { name, description, start_date, end_date, total_budget, vibe, cover_image } = tripData;
+    const { name, description, start_date, end_date, total_budget, vibe, cover_image, status } = tripData;
     const shareToken = crypto.randomBytes(16).toString('hex');
     
     // Parse DD/MM/YYYY dates to ISO for DB insertion
@@ -85,8 +106,8 @@ class TripsService {
     const isoEndDate = parseDDMMYYYYToISO(end_date);
 
     const query = `
-      INSERT INTO trips (user_id, name, description, start_date, end_date, total_budget, vibe, cover_image, share_token)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      INSERT INTO trips (user_id, name, description, start_date, end_date, total_budget, vibe, cover_image, status, share_token)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
       RETURNING *
     `;
     const values = [
@@ -98,6 +119,7 @@ class TripsService {
       total_budget || 0.00,
       vibe || 'Balanced',
       cover_image || 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=1200&q=80',
+      status || 'planning',
       shareToken
     ];
 
@@ -223,7 +245,6 @@ class TripsService {
       shareToken = crypto.randomBytes(16).toString('hex');
     }
 
-    // Set is_public explicitly to boolean value passed
     const targetPublicState = isPublic !== undefined ? Boolean(isPublic) : true;
 
     const query = `
@@ -289,7 +310,6 @@ class TripsService {
         );
         const newStopId = newStopRes.rows[0].id;
 
-        // Clone activities under each stop
         const origActivitiesRes = await client.query(
           'SELECT * FROM itinerary_activities WHERE trip_stop_id = $1 ORDER BY sequence_order ASC',
           [origStop.id]

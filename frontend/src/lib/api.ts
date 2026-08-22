@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { Trip, TripStop, ItineraryActivity, Expense, BudgetAnalytics } from '../types/trip';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -10,6 +10,26 @@ export const apiClient = axios.create({
     'Content-Type': 'application/json',
   },
 });
+
+/* ============================================================================
+ * AUTH API SERVICES
+ * ============================================================================ */
+
+/**
+ * Fetch current authenticated user profile (/api/auth/me)
+ */
+export async function getCurrentUser(): Promise<any> {
+  const response = await apiClient.get('/auth/me');
+  return response.data.data?.user || response.data.data || response.data;
+}
+
+/**
+ * Log out user (/api/auth/logout)
+ */
+export async function logoutUser(): Promise<boolean> {
+  const response = await apiClient.post('/auth/logout');
+  return response.data.success ?? true;
+}
 
 /* ============================================================================
  * TRIPS API SERVICES

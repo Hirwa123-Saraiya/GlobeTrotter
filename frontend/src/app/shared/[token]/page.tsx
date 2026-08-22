@@ -93,7 +93,7 @@ export default function PublicSharedTripPage({ params }: { params: { token: stri
               ✨ {trip.vibe}
             </span>
             <h1 style={{ fontSize: '2rem', fontWeight: 800, color: '#ffffff' }}>{trip.name}</h1>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', marginTop: '0.3rem', fontSize: '0.88rem', color: 'var(--text-muted)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', marginTop: '0.3rem', fontSize: '0.88rem', color: 'rgba(255,255,255,0.9)' }}>
               <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                 <Calendar size={14} color="var(--accent-teal)" />
                 {trip.start_date} — {trip.end_date}
@@ -106,7 +106,7 @@ export default function PublicSharedTripPage({ params }: { params: { token: stri
           </div>
         </div>
 
-        <div style={{ padding: '1.5rem', background: 'rgba(18, 24, 38, 0.5)' }}>
+        <div style={{ padding: '1.5rem', background: 'var(--bg-card)' }}>
           <p style={{ fontSize: '0.95rem', color: 'var(--text-muted)', lineHeight: '1.6' }}>{trip.description}</p>
         </div>
       </div>
@@ -127,7 +127,7 @@ export default function PublicSharedTripPage({ params }: { params: { token: stri
               {index + 1}
             </div>
             <div>
-              <h4 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#ffffff' }}>{stop.city_name}</h4>
+              <h4 style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-main)' }}>{stop.city_name}</h4>
               <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginTop: '0.15rem' }}>
                 {stop.arrival_date} — {stop.departure_date}
               </p>

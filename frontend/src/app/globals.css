@@ -1,10 +1,10 @@
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
 
-:root {
+:root, [data-theme="dark"] {
   --bg-dark: #070913;
-  --bg-card: rgba(15, 23, 42, 0.75);
-  --bg-card-hover: rgba(30, 41, 59, 0.85);
-  --border-card: rgba(255, 255, 255, 0.1);
+  --bg-card: rgba(15, 23, 42, 0.85);
+  --bg-card-hover: rgba(30, 41, 59, 0.9);
+  --border-card: rgba(255, 255, 255, 0.12);
   --border-card-hover: rgba(99, 102, 241, 0.5);
   
   --primary: #6366f1;
@@ -22,6 +22,26 @@
   --font-main: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
+[data-theme="light"] {
+  --bg-dark: #f1f5f9;
+  --bg-card: #ffffff;
+  --bg-card-hover: #f8fafc;
+  --border-card: #cbd5e1;
+  --border-card-hover: #6366f1;
+  
+  --primary: #4f46e5;
+  --primary-glow: rgba(79, 70, 229, 0.2);
+  --accent-teal: #0d9488;
+  --accent-teal-glow: rgba(13, 148, 136, 0.2);
+  --accent-amber: #d97706;
+  --accent-rose: #e11d48;
+  --accent-cyan: #0891b2;
+  
+  --text-main: #0f172a; /* Ultra high-contrast Slate 900 for Light Mode */
+  --text-muted: #334155; /* High-contrast Slate 700 for Light Mode */
+  --text-dim: #475569;   /* Readable Slate 600 for Light Mode */
+}
+
 * {
   box-sizing: border-box;
   margin: 0;
@@ -35,6 +55,16 @@ body {
   min-height: 100vh;
   overflow-x: hidden;
   position: relative;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: var(--text-main);
+  transition: color 0.3s ease;
+}
+
+p, span, label {
+  transition: color 0.3s ease;
 }
 
 /* Remove underlines from all links and buttons */
@@ -98,10 +128,9 @@ body::after {
 }
 
 .activity-card-hover:hover {
-  border-color: rgba(20, 184, 166, 0.4) !important;
-  background: rgba(15, 23, 42, 0.9) !important;
+  border-color: rgba(20, 184, 166, 0.5) !important;
   transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(20, 184, 166, 0.15);
+  box-shadow: 0 6px 16px rgba(20, 184, 166, 0.2);
 }
 
 /* Status Badges */
@@ -119,30 +148,30 @@ body::after {
 
 .badge-planning {
   background: rgba(99, 102, 241, 0.15);
-  color: #a5b4fc;
+  color: var(--primary);
   border: 1px solid rgba(99, 102, 241, 0.3);
 }
 
 .badge-ongoing {
   background: rgba(20, 184, 166, 0.15);
-  color: #5eead4;
+  color: var(--accent-teal);
   border: 1px solid rgba(20, 184, 166, 0.3);
 }
 
 .badge-completed {
   background: rgba(245, 158, 11, 0.15);
-  color: #fcd34d;
+  color: var(--accent-amber);
   border: 1px solid rgba(245, 158, 11, 0.3);
 }
 
 /* Button UI */
 .btn-primary {
-  background: linear-gradient(135deg, var(--primary) 0%, #4f46e5 100%);
-  color: #ffffff;
+  background: linear-gradient(135deg, var(--primary) 0%, #4338ca 100%);
+  color: #ffffff !important;
   border: none;
   padding: 0.7rem 1.4rem;
   border-radius: 0.75rem;
-  font-weight: 600;
+  font-weight: 700;
   font-size: 0.9rem;
   cursor: pointer;
   display: inline-flex;
@@ -155,13 +184,12 @@ body::after {
 .btn-primary:hover {
   transform: translateY(-2px);
   box-shadow: 0 6px 20px var(--primary-glow);
-  background: linear-gradient(135deg, #6366f1 0%, #4338ca 100%);
 }
 
 .btn-secondary {
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(148, 163, 184, 0.12);
   color: var(--text-main);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid var(--border-card);
   padding: 0.65rem 1.2rem;
   border-radius: 0.75rem;
   font-weight: 600;
@@ -174,9 +202,8 @@ body::after {
 }
 
 .btn-secondary:hover {
-  background: rgba(255, 255, 255, 0.12);
-  border-color: rgba(255, 255, 255, 0.25);
-  color: #ffffff;
+  background: rgba(148, 163, 184, 0.22);
+  border-color: var(--border-card-hover);
 }
 
 /* Form Controls */
@@ -187,14 +214,14 @@ body::after {
 .form-group label {
   display: block;
   font-size: 0.85rem;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--text-muted);
   margin-bottom: 0.45rem;
 }
 
 .form-input {
   width: 100%;
-  background: rgba(11, 15, 25, 0.8);
+  background: var(--bg-card);
   border: 1px solid var(--border-card);
   border-radius: 0.75rem;
   padding: 0.7rem 1rem;
