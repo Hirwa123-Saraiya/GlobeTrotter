@@ -7,6 +7,8 @@ const {
   logout,
   refreshAccessToken,
   getMe,
+  updateMe,
+  deleteMe,
   forgotPassword,
   resetPassword,
 } = require('../controllers/auth.controller');
@@ -14,6 +16,8 @@ const {
 const {
   signupValidator,
   loginValidator,
+  updateMeValidator,
+  deleteMeValidator,
   forgotPasswordValidator,
   resetPasswordValidator,
 } = require('../validators/auth.validator');
@@ -128,6 +132,71 @@ router.post('/refresh-token', refreshAccessToken);
  *         description: Not authenticated
  */
 router.get('/me', protect, getMe);
+
+/**
+ * @swagger
+ * /auth/me:
+ *   patch:
+ *     summary: Update the currently authenticated user's profile
+ *     tags: [Auth]
+ *     security:
+ *       - cookieAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/UpdateMeRequest'
+ *     responses:
+ *       200:
+ *         description: Profile updated
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/ApiResponse'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       type: object
+ *                       properties:
+ *                         user:
+ *                           $ref: '#/components/schemas/User'
+ *       401:
+ *         description: Not authenticated
+ *       409:
+ *         description: Email already in use
+ */
+router.patch('/me', protect, updateMeValidator, validate, updateMe);
+
+/**
+ * @swagger
+ * /auth/me:
+ *   delete:
+ *     summary: Soft-delete the currently authenticated user's account
+ *     description: Marks the account as deleted (data is retained) and revokes all sessions. Requires the current password to confirm.
+ *     tags: [Auth]
+ *     security:
+ *       - cookieAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [password]
+ *             properties:
+ *               password:
+ *                 type: string
+ *                 format: password
+ *                 example: StrongP@ss123
+ *     responses:
+ *       200:
+ *         description: Account deleted
+ *       401:
+ *         description: Not authenticated or incorrect password
+ */
+router.delete('/me', protect, deleteMeValidator, validate, deleteMe);
 
 /**
  * @swagger

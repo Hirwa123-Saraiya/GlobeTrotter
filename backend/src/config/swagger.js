@@ -45,8 +45,18 @@ const options = {
             firstName: { type: 'string', example: 'Aarav' },
             lastName: { type: 'string', example: 'Shah' },
             email: { type: 'string', format: 'email', example: 'aarav@example.com' },
+            profilePhotoUrl: { type: 'string', format: 'uri', nullable: true, example: 'https://example.com/avatar.jpg' },
             createdAt: { type: 'string', format: 'date-time' },
             updatedAt: { type: 'string', format: 'date-time' },
+          },
+        },
+        UpdateMeRequest: {
+          type: 'object',
+          properties: {
+            firstName: { type: 'string', example: 'Aarav' },
+            lastName: { type: 'string', example: 'Shah' },
+            email: { type: 'string', format: 'email', example: 'aarav@example.com' },
+            profilePhotoUrl: { type: 'string', format: 'uri', example: 'https://example.com/avatar.jpg' },
           },
         },
         SignupRequest: {

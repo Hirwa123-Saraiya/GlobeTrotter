@@ -51,7 +51,7 @@ const login = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
 
   const user = await userModel.findByEmail(email);
-  if (!user || !(await userModel.comparePassword(password, user.password))) {
+  if (!user || user.deleted_at || !(await userModel.comparePassword(password, user.password))) {
     throw new ApiError(401, 'Invalid email or password.');
   }
 
@@ -121,6 +121,53 @@ const getMe = asyncHandler(async (req, res) => {
 });
 
 /**
+ * @desc    Update the currently authenticated user's profile
+ * @route   PATCH /api/auth/me
+ * @access  Private
+ */
+const updateMe = asyncHandler(async (req, res) => {
+  const { firstName, lastName, email, profilePhotoUrl } = req.body;
+
+  if (email && email.toLowerCase().trim() !== req.userRow.email) {
+    const existingUser = await userModel.findByEmail(email);
+    if (existingUser) {
+      throw new ApiError(409, 'An account with this email already exists.');
+    }
+  }
+
+  const updatedUser = await userModel.updateProfile(req.userRow.id, {
+    firstName,
+    lastName,
+    email,
+    profilePhotoUrl,
+  });
+
+  res.status(200).json({
+    success: true,
+    message: 'Profile updated successfully.',
+    data: { user: userModel.toSafeUser(updatedUser) },
+  });
+});
+
+/**
+ * @desc    Soft-delete the currently authenticated user's account
+ * @route   DELETE /api/auth/me
+ * @access  Private
+ */
+const deleteMe = asyncHandler(async (req, res) => {
+  const { password } = req.body;
+
+  if (!(await userModel.comparePassword(password, req.userRow.password))) {
+    throw new ApiError(401, 'Incorrect password.');
+  }
+
+  await userModel.softDeleteUser(req.userRow.id);
+
+  clearAuthCookies(res);
+  res.status(200).json({ success: true, message: 'Account deleted successfully.' });
+});
+
+/**
  * @desc    Generate and email a password reset OTP for the given email
  * @route   POST /api/auth/forgot-password
  * @access  Public
@@ -135,7 +182,7 @@ const forgotPassword = asyncHandler(async (req, res) => {
     message: 'If an account with that email exists, a password reset code has been sent.',
   };
 
-  if (!user) {
+  if (!user || user.deleted_at) {
     return res.status(200).json(genericResponse);
   }
 
@@ -175,6 +222,8 @@ module.exports = {
   logout,
   refreshAccessToken,
   getMe,
+  updateMe,
+  deleteMe,
   forgotPassword,
   resetPassword,
 };

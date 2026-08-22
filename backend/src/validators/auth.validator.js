@@ -18,6 +18,17 @@ const loginValidator = [
   body('password').notEmpty().withMessage('Password is required'),
 ];
 
+const updateMeValidator = [
+  body('firstName').optional().trim().notEmpty().withMessage('First name cannot be empty').isLength({ max: 100 }),
+  body('lastName').optional().trim().notEmpty().withMessage('Last name cannot be empty').isLength({ max: 100 }),
+  body('email').optional().trim().notEmpty().withMessage('Email cannot be empty').isEmail().withMessage('Provide a valid email'),
+  body('profilePhotoUrl').optional({ nullable: true }).isURL().withMessage('Profile photo must be a valid URL'),
+];
+
+const deleteMeValidator = [
+  body('password').notEmpty().withMessage('Password is required to confirm account deletion'),
+];
+
 const forgotPasswordValidator = [
   body('email').trim().notEmpty().withMessage('Email is required').isEmail().withMessage('Provide a valid email'),
 ];
@@ -44,6 +55,8 @@ const resetPasswordValidator = [
 module.exports = {
   signupValidator,
   loginValidator,
+  updateMeValidator,
+  deleteMeValidator,
   forgotPasswordValidator,
   resetPasswordValidator,
 };
