@@ -1,14 +1,14 @@
+const dotenv = require('dotenv');
+dotenv.config();
+
 const express = require('express');
 const cors = require('cors');
-const dotenv = require('dotenv');
 const cookieParser = require('cookie-parser');
 const swaggerUi = require('swagger-ui-express');
 const swaggerSpec = require('./config/swagger');
 const { connectDB } = require('./config/db');
 const routes = require('./routes');
 const { errorHandler, notFound } = require('./middlewares/error.middleware');
-
-dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
