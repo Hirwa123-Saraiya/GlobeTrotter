@@ -85,7 +85,7 @@ export default function ActivityModal({
           scheduled_date: formattedDate,
           start_time: startTime,
           end_time: endTime,
-          custom_cost: parseFloat(customCost) || 0,
+          custom_cost: Math.max(0, parseFloat(customCost) || 0),
           notes,
         },
         activityToEdit?.id
@@ -187,6 +187,7 @@ export default function ActivityModal({
             <label>Estimated Cost (₹)</label>
             <input 
               type="number" 
+              min="0"
               className="form-input" 
               placeholder="1500" 
               value={customCost} 

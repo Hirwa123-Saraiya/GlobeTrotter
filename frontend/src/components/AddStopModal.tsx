@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, MapPin, Calendar } from 'lucide-react';
+import { X, MapPin, Calendar, AlertCircle } from 'lucide-react';
 import { TripStop } from '../types/trip';
 import { inputDateToDDMMYYYY } from '../lib/dateFormatter';
 
@@ -13,12 +13,21 @@ export default function AddStopModal({ isOpen, onClose, onAddStop }: AddStopModa
   const [cityName, setCityName] = useState('');
   const [arrivalDate, setArrivalDate] = useState('');
   const [departureDate, setDepartureDate] = useState('');
+  const [dateError, setDateError] = useState<string | null>(null);
 
   if (!isOpen) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setDateError(null);
+
     if (!cityName || !arrivalDate || !departureDate) return;
+
+    // Edge Case Protection: Departure date cannot be earlier than arrival date
+    if (new Date(departureDate) < new Date(arrivalDate)) {
+      setDateError('Departure date must be on or after arrival date.');
+      return;
+    }
 
     onAddStop({
       city_name: cityName,
@@ -48,6 +57,14 @@ export default function AddStopModal({ isOpen, onClose, onAddStop }: AddStopModa
             <X size={18} />
           </button>
         </div>
+
+        {/* Validation Alert */}
+        {dateError && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(244, 63, 94, 0.15)', color: 'var(--accent-rose)', padding: '0.65rem 0.85rem', borderRadius: '0.65rem', marginBottom: '1rem', fontSize: '0.82rem', fontWeight: 600 }}>
+            <AlertCircle size={16} />
+            {dateError}
+          </div>
+        )}
 
         {/* Form Body */}
         <form onSubmit={handleSubmit}>

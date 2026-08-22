@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Calendar, Compass, DollarSign, Sparkles, Image as ImageIcon } from 'lucide-react';
+import { X, Calendar, Compass, DollarSign, Sparkles, Image as ImageIcon, AlertCircle } from 'lucide-react';
 import { Trip } from '../types/trip';
 import { inputDateToDDMMYYYY } from '../lib/dateFormatter';
 
@@ -24,19 +24,30 @@ export default function CreateTripModal({ isOpen, onClose, onSubmit }: CreateTri
   const [budget, setBudget] = useState('50000');
   const [vibe, setVibe] = useState('Balanced');
   const [coverImage, setCoverImage] = useState(DEFAULT_COVERS[0]);
+  const [dateError, setDateError] = useState<string | null>(null);
 
   if (!isOpen) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setDateError(null);
+
     if (!name || !startDate || !endDate) return;
+
+    // Edge Case Protection: End date cannot be earlier than start date
+    if (new Date(endDate) < new Date(startDate)) {
+      setDateError('End date must be on or after the start date.');
+      return;
+    }
+
+    const parsedBudget = Math.max(0, parseFloat(budget) || 0);
 
     onSubmit({
       name,
       description,
       start_date: inputDateToDDMMYYYY(startDate),
       end_date: inputDateToDDMMYYYY(endDate),
-      total_budget: parseFloat(budget) || 0,
+      total_budget: parsedBudget,
       vibe,
       status: 'planning',
       is_public: false,
@@ -64,6 +75,14 @@ export default function CreateTripModal({ isOpen, onClose, onSubmit }: CreateTri
             <X size={20} />
           </button>
         </div>
+
+        {/* Validation Alert */}
+        {dateError && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(244, 63, 94, 0.15)', color: 'var(--accent-rose)', padding: '0.65rem 0.85rem', borderRadius: '0.65rem', marginBottom: '1rem', fontSize: '0.82rem', fontWeight: 600 }}>
+            <AlertCircle size={16} />
+            {dateError}
+          </div>
+        )}
 
         {/* Form Body */}
         <form onSubmit={handleSubmit}>
@@ -120,6 +139,7 @@ export default function CreateTripModal({ isOpen, onClose, onSubmit }: CreateTri
               <label>Total Budget (₹)</label>
               <input 
                 type="number" 
+                min="0"
                 className="form-input" 
                 placeholder="50000" 
                 value={budget} 
