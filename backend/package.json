@@ -6,10 +6,11 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "node --watch src/server.js",
-    "migrate": "node src/db/migrate.js",
+    "migrate": "npx prisma migrate dev",
     "studio": "npx prisma studio --port 5555",
     "db:push": "npx prisma db push",
     "db:migrate": "npx prisma migrate dev",
+    "db:reset": "npx prisma migrate reset --force",
     "db:deploy": "npx prisma migrate deploy"
   },
   "dependencies": {
