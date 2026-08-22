@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, DollarSign, Calendar, FileText, Tag, Sparkles } from 'lucide-react';
+import { X, DollarSign, Calendar, FileText, Tag, Sparkles, AlertCircle } from 'lucide-react';
 import { Expense } from '../types/trip';
 import { inputDateToDDMMYYYY } from '../lib/dateFormatter';
 
@@ -28,17 +28,18 @@ export default function LogExpenseModal({
   const [amount, setAmount] = useState('2500');
   const [expenseDate, setExpenseDate] = useState('');
   const [description, setDescription] = useState('');
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   const isEditMode = !!expenseToEdit;
 
   useEffect(() => {
+    setErrorMsg(null);
     if (expenseToEdit) {
       setCategory(expenseToEdit.category || 'Transport');
       setAmount(String(expenseToEdit.amount || 0));
       setDescription(expenseToEdit.description || '');
 
-      // Convert DD/MM/YYYY to YYYY-MM-DD for date input
       if (expenseToEdit.expense_date) {
         const parts = expenseToEdit.expense_date.split('/');
         if (parts.length === 3) {
@@ -57,7 +58,15 @@ export default function LogExpenseModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorMsg(null);
+
     if (!category || !amount || !expenseDate) return;
+
+    const parsedAmount = parseFloat(amount);
+    if (isNaN(parsedAmount) || parsedAmount <= 0) {
+      setErrorMsg('Expense amount must be greater than zero.');
+      return;
+    }
 
     setSubmitting(true);
     try {
@@ -65,7 +74,7 @@ export default function LogExpenseModal({
       await onSaveExpense(
         {
           category,
-          amount: parseFloat(amount) || 0,
+          amount: parsedAmount,
           description,
           expense_date: formattedDate
         },
@@ -102,6 +111,14 @@ export default function LogExpenseModal({
           </button>
         </div>
 
+        {/* Validation Error */}
+        {errorMsg && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(244, 63, 94, 0.15)', color: 'var(--accent-rose)', padding: '0.65rem 0.85rem', borderRadius: '0.65rem', marginBottom: '1rem', fontSize: '0.82rem', fontWeight: 600 }}>
+            <AlertCircle size={16} />
+            {errorMsg}
+          </div>
+        )}
+
         {/* Form Body */}
         <form onSubmit={handleSubmit}>
           {/* Category & Amount Row */}
@@ -119,6 +136,8 @@ export default function LogExpenseModal({
               <label>Amount (₹) *</label>
               <input 
                 type="number" 
+                min="0.01"
+                step="0.01"
                 className="form-input" 
                 placeholder="2500" 
                 value={amount} 

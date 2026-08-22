@@ -11,7 +11,6 @@ function formatTripDates(trip) {
   let computedStatus = trip.status || 'planning';
   if (trip.start_date && trip.end_date) {
     const now = new Date();
-    // Midnight UTC today for accurate date comparisons
     const today = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
     const startDate = new Date(trip.start_date);
     const endDate = new Date(trip.end_date);
@@ -77,7 +76,7 @@ function calculateTripHealthScore(trip, stops = []) {
 
 class TripsService {
   /**
-   * List all trips for a user
+   * List all trips for a user with stops eager-loaded
    */
   async getUserTrips(userId) {
     const query = `
@@ -91,7 +90,18 @@ class TripsService {
       ORDER BY t.created_at DESC
     `;
     const { rows } = await pool.query(query, [userId]);
-    return rows.map(formatTripDates);
+    const formattedTrips = rows.map(formatTripDates);
+
+    // Eagerly fetch city stops for every trip
+    for (let trip of formattedTrips) {
+      const stopsRes = await pool.query(
+        'SELECT * FROM trip_stops WHERE trip_id = $1 ORDER BY sequence_order ASC, arrival_date ASC',
+        [trip.id]
+      );
+      trip.stops = stopsRes.rows.map(formatStopDates);
+    }
+
+    return formattedTrips;
   }
 
   /**
@@ -300,7 +310,6 @@ class TripsService {
       const newTripRes = await client.query(newTripQuery, newTripValues);
       const newTrip = newTripRes.rows[0];
 
-      // Clone trip stops and activities
       const origStopsRes = await client.query('SELECT * FROM trip_stops WHERE trip_id = $1 ORDER BY sequence_order ASC', [tripId]);
       for (let origStop of origStopsRes.rows) {
         const newStopRes = await client.query(

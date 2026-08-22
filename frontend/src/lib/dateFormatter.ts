@@ -30,13 +30,15 @@ export function formatToDDMMYYYY(dateInput: string | Date | undefined): string {
 }
 
 /**
- * Convert HTML date input value (YYYY-MM-DD) to DD/MM/YYYY
+ * Convert HTML date input value (YYYY-MM-DD) to DD/MM/YYYY safely
  */
 export function inputDateToDDMMYYYY(inputVal: string): string {
   if (!inputVal) return '';
-  const parts = inputVal.split('-');
+  const trimmed = inputVal.trim();
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(trimmed)) return trimmed;
+  const parts = trimmed.split('-');
   if (parts.length === 3) {
-    return `${parts[2]}/${parts[1]}/${parts[0]}`;
+    return `${parts[2].padStart(2, '0')}/${parts[1].padStart(2, '0')}/${parts[0]}`;
   }
-  return inputVal;
+  return trimmed;
 }
