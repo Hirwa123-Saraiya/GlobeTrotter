@@ -34,7 +34,6 @@ export default function CreateTripModal({ isOpen, onClose, onSubmit }: CreateTri
 
     if (!name || !startDate || !endDate) return;
 
-    // Edge Case Protection: End date cannot be earlier than start date
     if (new Date(endDate) < new Date(startDate)) {
       setDateError('End date must be on or after the start date.');
       return;
@@ -68,7 +67,7 @@ export default function CreateTripModal({ isOpen, onClose, onSubmit }: CreateTri
             </div>
             <div>
               <h2 style={{ fontSize: '1.25rem', fontWeight: 700 }}>Plan a New Trip</h2>
-              <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Enter your trip details (Dates in DD/MM/YYYY format)</p>
+              <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Enter your trip itinerary details</p>
             </div>
           </div>
           <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
@@ -112,7 +111,7 @@ export default function CreateTripModal({ isOpen, onClose, onSubmit }: CreateTri
           {/* Dates Row */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
             <div className="form-group">
-              <label>Start Date * (DD/MM/YYYY)</label>
+              <label>Start Date *</label>
               <input 
                 type="date" 
                 className="form-input" 
@@ -122,7 +121,7 @@ export default function CreateTripModal({ isOpen, onClose, onSubmit }: CreateTri
               />
             </div>
             <div className="form-group">
-              <label>End Date * (DD/MM/YYYY)</label>
+              <label>End Date *</label>
               <input 
                 type="date" 
                 className="form-input" 

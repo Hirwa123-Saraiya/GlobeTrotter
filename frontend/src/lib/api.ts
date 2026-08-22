@@ -12,6 +12,64 @@ export const apiClient = axios.create({
 });
 
 /* ============================================================================
+ * AXIOS INTERCEPTOR FOR AUTOMATIC SILENT REFRESH TOKEN
+ * ============================================================================ */
+apiClient.interceptors.response.use(
+  (response) => {
+    // If login / signup / refresh response contains refreshToken in payload, store fallback
+    if (response.data?.data?.refreshToken) {
+      try {
+        localStorage.setItem('globetrotter_refresh_token', response.data.data.refreshToken);
+      } catch (e) {}
+    }
+    return response;
+  },
+  async (error) => {
+    const originalRequest = error.config;
+    if (
+      error.response &&
+      error.response.status === 401 &&
+      !originalRequest._retry &&
+      !originalRequest.url?.includes('/auth/login') &&
+      !originalRequest.url?.includes('/auth/refresh-token')
+    ) {
+      originalRequest._retry = true;
+      try {
+        let storedRefreshToken = '';
+        try {
+          storedRefreshToken = localStorage.getItem('globetrotter_refresh_token') || '';
+        } catch (e) {}
+
+        const refreshRes = await apiClient.post(
+          '/auth/refresh-token',
+          { refreshToken: storedRefreshToken },
+          {
+            withCredentials: true,
+            headers: {
+              'x-refresh-token': storedRefreshToken,
+            },
+          }
+        );
+
+        if (refreshRes.data?.data?.refreshToken) {
+          try {
+            localStorage.setItem('globetrotter_refresh_token', refreshRes.data.data.refreshToken);
+          } catch (e) {}
+        }
+
+        return apiClient(originalRequest);
+      } catch (refreshErr) {
+        try {
+          localStorage.removeItem('globetrotter_refresh_token');
+        } catch (e) {}
+        return Promise.reject(refreshErr);
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
+/* ============================================================================
  * AUTH API SERVICES
  * ============================================================================ */
 
@@ -21,7 +79,34 @@ export async function getCurrentUser(): Promise<any> {
 }
 
 export async function logoutUser(): Promise<boolean> {
+  try {
+    localStorage.removeItem('globetrotter_refresh_token');
+  } catch (e) {}
   const response = await apiClient.post('/auth/logout');
+  return response.data.success ?? true;
+}
+
+export async function refreshToken(): Promise<boolean> {
+  let storedRefreshToken = '';
+  try {
+    storedRefreshToken = localStorage.getItem('globetrotter_refresh_token') || '';
+  } catch (e) {}
+
+  const response = await apiClient.post(
+    '/auth/refresh-token',
+    { refreshToken: storedRefreshToken },
+    {
+      headers: {
+        'x-refresh-token': storedRefreshToken,
+      },
+    }
+  );
+
+  if (response.data?.data?.refreshToken) {
+    try {
+      localStorage.setItem('globetrotter_refresh_token', response.data.data.refreshToken);
+    } catch (e) {}
+  }
   return response.data.success ?? true;
 }
 
@@ -101,7 +186,7 @@ export async function addStop(
   stopData: {
     city_name: string;
     arrival_date: string; // DD/MM/YYYY
-    departure_date: string; // DD/MM/YYYY
+    departure_date: string; // DD/MM/YYYY;
     sequence_order?: number;
   }
 ): Promise<TripStop> {

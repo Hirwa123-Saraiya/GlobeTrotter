@@ -1,8 +1,8 @@
 require('dotenv').config();
 const jwt = require('jsonwebtoken');
 
-const ACCESS_SECRET = process.env.JWT_SECRET;
-const REFRESH_SECRET = process.env.JWT_SECRET;
+const ACCESS_SECRET = process.env.JWT_SECRET || 'supersecret_jwt_key_globetrotter';
+const REFRESH_SECRET = process.env.JWT_SECRET || 'supersecret_jwt_key_globetrotter';
 
 const generateAccessToken = (payload) =>
   jwt.sign(payload, ACCESS_SECRET, { expiresIn: process.env.JWT_ACCESS_EXPIRES_IN || '15m' });
@@ -23,7 +23,7 @@ const getCookieOptions = (maxAgeMs) => ({
   ...(maxAgeMs ? { maxAge: maxAgeMs } : {}),
 });
 
-const ACCESS_TOKEN_MAX_AGE = 15 * 60 * 1000; // 15 minutes
+const ACCESS_TOKEN_MAX_AGE = 15 * 60 * 1000; // 15 minutes for standard production usage
 const REFRESH_TOKEN_MAX_AGE = 7 * 24 * 60 * 60 * 1000; // 7 days
 
 const setAuthCookies = (res, { accessToken, refreshToken }) => {

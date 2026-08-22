@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { API_BASE_URL } from '@/lib/api';
+import { API_BASE_URL, getCurrentUser, getTrips, logoutUser } from '@/lib/api';
 import { parseDDMMYYYY } from '@/lib/date';
 import '@/styles/profile.css';
 
@@ -65,46 +65,41 @@ export default function ProfilePage() {
   useEffect(() => {
     const load = async () => {
       try {
-        const [meRes, tripsRes] = await Promise.all([
-          fetch(`${API_BASE_URL}/auth/me`, { credentials: 'include' }),
-          fetch(`${API_BASE_URL}/trips`, { credentials: 'include' }),
-        ]);
-
-        if (meRes.status === 401) {
+        const meUser = await getCurrentUser();
+        if (!meUser) {
           router.push('/login');
           return;
         }
 
-        const meData = await meRes.json();
-        if (!meRes.ok) throw new Error(meData.message || 'Failed to load profile');
-
-        setUser(meData.data.user);
+        setUser(meUser);
         setDetailsForm({
-          firstName: meData.data.user.firstName,
-          lastName: meData.data.user.lastName,
-          email: meData.data.user.email,
+          firstName: meUser.firstName || '',
+          lastName: meUser.lastName || '',
+          email: meUser.email || '',
         });
 
-        const tripsData = await tripsRes.json();
-        if (tripsRes.ok) {
-          const today = new Date();
-          today.setHours(0, 0, 0, 0);
+        const userTrips = await getTrips().catch(() => []);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
 
-          const preplanned = [];
-          const previous = [];
-          for (const trip of tripsData.data || []) {
-            const end = parseDDMMYYYY(trip.end_date);
-            if (end && end < today) {
-              previous.push(trip);
-            } else {
-              preplanned.push(trip);
-            }
+        const preplanned = [];
+        const previous = [];
+        for (const trip of userTrips || []) {
+          const end = parseDDMMYYYY(trip.end_date);
+          if (end && end < today) {
+            previous.push(trip);
+          } else {
+            preplanned.push(trip);
           }
-          setPreplannedTrips(preplanned);
-          setPreviousTrips(previous);
         }
+        setPreplannedTrips(preplanned);
+        setPreviousTrips(previous);
       } catch (err) {
-        setLoadError(err.message);
+        if (err.response?.status === 401) {
+          router.push('/login');
+          return;
+        }
+        setLoadError(err.message || 'Failed to load profile');
       } finally {
         setLoading(false);
       }
@@ -141,9 +136,32 @@ export default function ProfilePage() {
     }
   };
 
+  const handleFileChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      setPhotoError('Image file size must be less than 5MB.');
+      return;
+    }
+
+    setPhotoError('');
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setPhotoUrl(reader.result);
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handlePhotoSave = async (e) => {
     e.preventDefault();
     setPhotoError('');
+
+    if (!photoUrl) {
+      setPhotoError('Please select a photo file or enter an image URL.');
+      return;
+    }
+
     setSavingPhoto(true);
 
     try {
@@ -199,11 +217,6 @@ export default function ProfilePage() {
 
   return (
     <main className="profile-page">
-      <div className="profile-header">
-        <span className="profile-header-logo">✈️</span>
-        <span>GlobeTrotter</span>
-      </div>
-
       <div className="profile-content">
         <div className="profile-card">
           <div className="profile-photo-wrap">
@@ -221,14 +234,26 @@ export default function ProfilePage() {
               <form className="profile-form" onSubmit={handlePhotoSave} style={{ width: '100%' }}>
                 {photoError && <p className="profile-error">{photoError}</p>}
                 <div>
-                  <label htmlFor="photoUrl">Photo URL</label>
+                  <label htmlFor="photoFile">Upload Image File</label>
+                  <input
+                    id="photoFile"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    style={{ padding: '0.4rem' }}
+                  />
+                </div>
+                <div style={{ textAlign: 'center', fontSize: '0.75rem', color: 'var(--text-dim)', margin: '0.2rem 0' }}>
+                  — OR —
+                </div>
+                <div>
+                  <label htmlFor="photoUrl">Image URL</label>
                   <input
                     id="photoUrl"
                     type="url"
                     placeholder="https://example.com/photo.jpg"
                     value={photoUrl}
                     onChange={(e) => setPhotoUrl(e.target.value)}
-                    required
                   />
                 </div>
                 <div className="profile-form-actions">
@@ -238,7 +263,11 @@ export default function ProfilePage() {
                   <button
                     className="profile-btn-secondary"
                     type="button"
-                    onClick={() => setEditingPhoto(false)}
+                    onClick={() => {
+                      setEditingPhoto(false);
+                      setPhotoUrl('');
+                      setPhotoError('');
+                    }}
                   >
                     Cancel
                   </button>

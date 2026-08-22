@@ -181,7 +181,7 @@ export default function Home() {
           margin: '0 auto 2.5rem',
           lineHeight: '1.65'
         }}>
-          Build day-by-day city routes, track real-time budgets & expenses, standardize date formatting in <b>DD/MM/YYYY</b>, and publish shareable itineraries.
+          Build day-by-day city routes, track real-time budgets & expenses, and publish shareable itineraries.
         </p>
 
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1rem', flexWrap: 'wrap' }}>
@@ -335,7 +335,7 @@ export default function Home() {
                   {selectedSampleForPreview.name}
                 </h2>
                 <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                  📅 {selectedSampleForPreview.start_date} — {selectedSampleForPreview.end_date} (DD/MM/YYYY)
+                  📅 {selectedSampleForPreview.start_date} — {selectedSampleForPreview.end_date}
                 </p>
               </div>
 

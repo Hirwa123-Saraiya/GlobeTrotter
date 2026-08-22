@@ -37,7 +37,10 @@ app.use(
     credentials: true, // required so the browser sends/receives the httpOnly JWT cookies
   })
 );
-app.use(express.json());
+
+// Increased payload limit to 50MB to support uploading local profile photo images smoothly!
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(cookieParser());
 
 // Swagger OpenAPI Documentation Route
