@@ -76,9 +76,10 @@ const options = {
         },
         ResetPasswordRequest: {
           type: 'object',
-          required: ['token', 'password'],
+          required: ['email', 'otp', 'password'],
           properties: {
-            token: { type: 'string', example: 'a1b2c3d4e5f6...' },
+            email: { type: 'string', format: 'email', example: 'aarav@example.com' },
+            otp: { type: 'string', example: '123456' },
             password: { type: 'string', format: 'password', example: 'NewStrongP@ss123' },
           },
         },

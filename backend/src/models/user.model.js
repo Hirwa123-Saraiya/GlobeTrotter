@@ -60,11 +60,11 @@ const setPasswordResetToken = async (id, hashedToken, expiresAt) => {
   return rows[0];
 };
 
-const findByValidResetToken = async (hashedToken) => {
+const findByEmailAndValidResetToken = async (email, hashedToken) => {
   const { rows } = await pool.query(
     `SELECT * FROM users
-     WHERE password_reset_token = $1 AND password_reset_expires > NOW()`,
-    [hashedToken]
+     WHERE email = $1 AND password_reset_token = $2 AND password_reset_expires > NOW()`,
+    [email.toLowerCase().trim(), hashedToken]
   );
   return rows[0] || null;
 };
@@ -93,6 +93,6 @@ module.exports = {
   comparePassword,
   incrementRefreshTokenVersion,
   setPasswordResetToken,
-  findByValidResetToken,
+  findByEmailAndValidResetToken,
   resetPassword,
 };
