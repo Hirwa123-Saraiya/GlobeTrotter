@@ -13,7 +13,11 @@ interface TripCardProps {
 export default function TripCard({ trip, onDelete, onShare }: TripCardProps) {
   const formattedStart = formatToDDMMYYYY(trip.start_date);
   const formattedEnd = formatToDDMMYYYY(trip.end_date);
-  const stopCount = trip.stops ? trip.stops.length : 0;
+  
+  // Read stop_count from backend SQL query OR stops array length
+  const stopCount = trip.stop_count !== undefined 
+    ? Number(trip.stop_count) 
+    : (trip.stops ? trip.stops.length : 0);
 
   return (
     <div className="glass-card animate-slide-up" style={{ overflow: 'hidden', display: 'flex', flexDirection: 'column', height: '100%' }}>
@@ -38,8 +42,8 @@ export default function TripCard({ trip, onDelete, onShare }: TripCardProps) {
 
         {/* Status Badge */}
         <div style={{ position: 'absolute', top: '0.85rem', right: '0.85rem', zIndex: 2 }}>
-          <span className={`badge badge-${trip.status}`}>
-            {trip.status}
+          <span className={`badge badge-${trip.status || 'planning'}`}>
+            {trip.status || 'planning'}
           </span>
         </div>
 

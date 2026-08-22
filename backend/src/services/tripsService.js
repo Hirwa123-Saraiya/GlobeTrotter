@@ -200,14 +200,17 @@ class TripsService {
       shareToken = crypto.randomBytes(16).toString('hex');
     }
 
+    // Set is_public explicitly to boolean value passed
+    const targetPublicState = isPublic !== undefined ? Boolean(isPublic) : true;
+
     const query = `
       UPDATE trips
-      SET is_public = COALESCE($1, NOT is_public),
+      SET is_public = $1,
           share_token = $2
       WHERE id = $3
       RETURNING id, name, is_public, share_token
     `;
-    const { rows } = await pool.query(query, [isPublic, shareToken, tripId]);
+    const { rows } = await pool.query(query, [targetPublicState, shareToken, tripId]);
     return rows[0];
   }
 

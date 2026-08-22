@@ -10,7 +10,7 @@ export interface TripStop {
 
 export interface Trip {
   id: number;
-  user_id: number;
+  user_id: string | number;
   name: string;
   description: string;
   cover_image: string;
@@ -23,5 +23,6 @@ export interface Trip {
   share_token: string;
   created_at?: string;
   stops?: TripStop[];
+  stop_count?: number;
   health_score?: number;
 }

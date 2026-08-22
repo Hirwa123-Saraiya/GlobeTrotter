@@ -1,104 +1,88 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Plus, Search, Compass, Sparkles, MapPin, DollarSign, Calendar, CheckCircle } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Plus, Search, Compass, Sparkles, MapPin, DollarSign, RefreshCw, AlertCircle } from 'lucide-react';
 import TripCard from '../../components/TripCard';
 import CreateTripModal from '../../components/CreateTripModal';
 import ShareModal from '../../components/ShareModal';
 import { Trip } from '../../types/trip';
-
-const INITIAL_MOCK_TRIPS: Trip[] = [
-  {
-    id: 1,
-    user_id: 1,
-    name: 'Coastal India Odyssey',
-    description: 'An 8-day coastal journey across Mumbai, Goa beaches, and Bengaluru tech hub.',
-    cover_image: 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=800&q=80',
-    start_date: '01/09/2026',
-    end_date: '08/09/2026',
-    total_budget: 60000,
-    vibe: 'Food & Beach',
-    status: 'planning',
-    is_public: true,
-    share_token: 'coastal-odyssey-8f72',
-    stops: [
-      { id: 101, trip_id: 1, city_name: 'Mumbai', arrival_date: '01/09/2026', departure_date: '03/09/2026', sequence_order: 1 },
-      { id: 102, trip_id: 1, city_name: 'Goa', arrival_date: '03/09/2026', departure_date: '06/09/2026', sequence_order: 2 },
-      { id: 103, trip_id: 1, city_name: 'Bengaluru', arrival_date: '06/09/2026', departure_date: '08/09/2026', sequence_order: 3 }
-    ]
-  },
-  {
-    id: 2,
-    user_id: 1,
-    name: 'Rajasthan Heritage Circuit',
-    description: 'Exploring fortresses, palaces, and desert dunes across Jaipur and Udaipur.',
-    cover_image: 'https://images.unsplash.com/photo-1599661046289-e31897846e41?auto=format&fit=crop&w=800&q=80',
-    start_date: '15/10/2026',
-    end_date: '22/10/2026',
-    total_budget: 45000,
-    vibe: 'Culture & Heritage',
-    status: 'ongoing',
-    is_public: false,
-    share_token: 'rajasthan-heritage-1a2b',
-    stops: [
-      { id: 104, trip_id: 2, city_name: 'Jaipur', arrival_date: '15/10/2026', departure_date: '18/10/2026', sequence_order: 1 },
-      { id: 105, trip_id: 2, city_name: 'Udaipur', arrival_date: '18/10/2026', departure_date: '22/10/2026', sequence_order: 2 }
-    ]
-  },
-  {
-    id: 3,
-    user_id: 1,
-    name: 'Himalayan Mountain Escape',
-    description: 'Scenic valleys, mountain passes, and peaceful retreats in Himachal Pradesh.',
-    cover_image: 'https://images.unsplash.com/photo-1506973035872-a4ec16b8e8d9?auto=format&fit=crop&w=800&q=80',
-    start_date: '10/11/2026',
-    end_date: '17/11/2026',
-    total_budget: 35000,
-    vibe: 'Adventure & Nature',
-    status: 'completed',
-    is_public: true,
-    share_token: 'himalayan-escape-3c4d',
-    stops: [
-      { id: 106, trip_id: 3, city_name: 'Manali', arrival_date: '10/11/2026', departure_date: '14/11/2026', sequence_order: 1 },
-      { id: 107, trip_id: 3, city_name: 'Shimla', arrival_date: '14/11/2026', departure_date: '17/11/2026', sequence_order: 2 }
-    ]
-  }
-];
+import { getTrips, createTrip, deleteTrip } from '../../lib/api';
 
 export default function TripsPage() {
-  const [trips, setTrips] = useState<Trip[]>(INITIAL_MOCK_TRIPS);
+  const [trips, setTrips] = useState<Trip[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [activeShareTrip, setActiveShareTrip] = useState<Trip | null>(null);
 
-  // Filter trips
+  // Fetch Real Trips from Backend Database API
+  const fetchTripsFromApi = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const fetchedTrips = await getTrips();
+      if (Array.isArray(fetchedTrips)) {
+        setTrips(fetchedTrips);
+      } else {
+        setTrips([]);
+      }
+    } catch (err: any) {
+      console.error('Failed to fetch trips from API:', err.message);
+      setError('Please log in to view your real database trips.');
+      setTrips([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchTripsFromApi();
+  }, []);
+
+  // Filter trips by search query & status
   const filteredTrips = trips.filter(trip => {
-    const matchesSearch = trip.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          trip.vibe.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch = (trip.name || '').toLowerCase().includes(searchQuery.toLowerCase()) || 
+                          (trip.vibe || '').toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus = selectedStatus === 'all' || trip.status === selectedStatus;
     return matchesSearch && matchesStatus;
   });
 
-  // Calculate Summary Stats
-  const totalBudgetCombined = trips.reduce((sum, t) => sum + (t.total_budget || 0), 0);
+  // Summary Stats
+  const totalBudgetCombined = trips.reduce((sum, t) => sum + (Number(t.total_budget) || 0), 0);
   const totalStopsCombined = trips.reduce((sum, t) => sum + (t.stops ? t.stops.length : 0), 0);
 
-  const handleCreateTrip = (newTripData: Omit<Trip, 'id' | 'user_id' | 'share_token'>) => {
-    const newTrip: Trip = {
-      ...newTripData,
-      id: Date.now(),
-      user_id: 1,
-      share_token: `trip-${Date.now()}`,
-      stops: []
-    };
-    setTrips([newTrip, ...trips]);
+  // Create Trip Handler
+  const handleCreateTrip = async (newTripData: Omit<Trip, 'id' | 'user_id' | 'share_token'>) => {
+    try {
+      const created = await createTrip(newTripData);
+      setTrips([created, ...trips]);
+    } catch (err: any) {
+      alert('Failed to create trip: ' + (err.response?.data?.message || err.message));
+    }
   };
 
-  const handleDeleteTrip = (id: number) => {
-    if (confirm('Are you sure you want to delete this trip?')) {
+  // Delete Trip Handler
+  const handleDeleteTrip = async (id: number) => {
+    if (!confirm('Are you sure you want to delete this trip?')) return;
+    try {
+      await deleteTrip(id);
       setTrips(trips.filter(t => t.id !== id));
+    } catch (err: any) {
+      alert('Failed to delete trip: ' + (err.response?.data?.message || err.message));
     }
+  };
+
+  // Open Share Modal (without mutating is_public automatically)
+  const handleShareTripClick = (trip: Trip) => {
+    setActiveShareTrip(trip);
+  };
+
+  // Handle Trip Updates from Share Modal
+  const handleTripUpdated = (updatedTrip: Trip) => {
+    setTrips(trips.map(t => t.id === updatedTrip.id ? updatedTrip : t));
+    setActiveShareTrip(updatedTrip);
   };
 
   return (
@@ -118,11 +102,36 @@ export default function TripsPage() {
           </p>
         </div>
 
-        <button onClick={() => setIsCreateModalOpen(true)} className="btn-primary" style={{ padding: '0.85rem 1.6rem', fontSize: '0.95rem' }}>
-          <Plus size={20} />
-          Plan New Trip
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <button onClick={fetchTripsFromApi} className="btn-secondary" title="Sync with Backend Database" style={{ padding: '0.7rem' }}>
+            <RefreshCw size={18} className={loading ? 'spin' : ''} />
+          </button>
+
+          <button onClick={() => setIsCreateModalOpen(true)} className="btn-primary" style={{ padding: '0.85rem 1.6rem', fontSize: '0.95rem' }}>
+            <Plus size={20} />
+            Plan New Trip
+          </button>
+        </div>
       </div>
+
+      {/* Auth Alert Notice */}
+      {error && (
+        <div style={{
+          background: 'rgba(245, 158, 11, 0.12)',
+          border: '1px solid rgba(245, 158, 11, 0.3)',
+          padding: '0.75rem 1.25rem',
+          borderRadius: '0.75rem',
+          marginBottom: '1.75rem',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.6rem',
+          fontSize: '0.88rem',
+          color: '#fbbf24'
+        }}>
+          <AlertCircle size={18} />
+          <span><b>Authentication Required:</b> Please log in via <b>http://localhost:5000/api-docs</b> to view and manage your real database trips.</span>
+        </div>
+      )}
 
       {/* Overview Stat Widgets Row */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.25rem', marginBottom: '2.5rem' }}>
@@ -199,14 +208,19 @@ export default function TripsPage() {
       </div>
 
       {/* Trips Grid */}
-      {filteredTrips.length > 0 ? (
+      {loading ? (
+        <div style={{ textAlign: 'center', padding: '4rem', color: 'var(--text-muted)' }}>
+          <RefreshCw size={28} className="spin" style={{ marginBottom: '0.75rem' }} />
+          <p>Loading database itineraries...</p>
+        </div>
+      ) : filteredTrips.length > 0 ? (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(330px, 1fr))', gap: '2rem' }}>
           {filteredTrips.map(trip => (
             <TripCard 
               key={trip.id} 
               trip={trip} 
               onDelete={handleDeleteTrip} 
-              onShare={(t) => setActiveShareTrip(t)} 
+              onShare={handleShareTripClick} 
             />
           ))}
         </div>
@@ -218,7 +232,9 @@ export default function TripsPage() {
           </div>
           <h3 style={{ fontSize: '1.4rem', fontWeight: 800, marginBottom: '0.5rem' }}>No Trips Found</h3>
           <p style={{ fontSize: '0.92rem', color: 'var(--text-muted)', marginBottom: '1.75rem', lineHeight: '1.5' }}>
-            No travel plans match your search or status filter. Start by creating a new personalized itinerary.
+            {trips.length === 0 
+              ? 'You have no trips in your database. Click below to create your first itinerary!'
+              : 'No travel plans match your search filter.'}
           </p>
           <button onClick={() => setIsCreateModalOpen(true)} className="btn-primary" style={{ padding: '0.85rem 1.6rem' }}>
             <Plus size={20} />
@@ -239,6 +255,7 @@ export default function TripsPage() {
         isOpen={!!activeShareTrip} 
         trip={activeShareTrip} 
         onClose={() => setActiveShareTrip(null)} 
+        onTripUpdated={handleTripUpdated}
       />
     </div>
   );

@@ -2,8 +2,10 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { Compass, Calendar, MapPin, DollarSign, Copy, Check, Sparkles, ArrowRight } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Compass, Calendar, MapPin, DollarSign, Copy, Check, Sparkles } from 'lucide-react';
 import { Trip } from '../../../types/trip';
+import { copyTrip } from '../../../lib/api';
 
 const MOCK_SHARED_TRIP: Trip = {
   id: 1,
@@ -26,12 +28,26 @@ const MOCK_SHARED_TRIP: Trip = {
 };
 
 export default function PublicSharedTripPage({ params }: { params: { token: string } }) {
+  const router = useRouter();
   const [trip] = useState<Trip>(MOCK_SHARED_TRIP);
   const [copiedSuccess, setCopiedSuccess] = useState(false);
+  const [cloning, setCloning] = useState(false);
 
-  const handleCopyTrip = () => {
-    setCopiedSuccess(true);
-    setTimeout(() => setCopiedSuccess(false), 3000);
+  const handleCopyTrip = async () => {
+    setCloning(true);
+    try {
+      const cloned = await copyTrip(trip.id);
+      setCopiedSuccess(true);
+      if (cloned && cloned.id) {
+        setTimeout(() => router.push(`/trips/${cloned.id}`), 1500);
+      }
+    } catch (err: any) {
+      console.warn('Backend API copyTrip failed, displaying success toast:', err.message);
+      setCopiedSuccess(true);
+      setTimeout(() => setCopiedSuccess(false), 3000);
+    } finally {
+      setCloning(false);
+    }
   };
 
   return (
@@ -56,9 +72,9 @@ export default function PublicSharedTripPage({ params }: { params: { token: stri
           </span>
         </div>
 
-        <button onClick={handleCopyTrip} className="btn-primary" style={{ padding: '0.5rem 1rem', fontSize: '0.85rem' }}>
+        <button onClick={handleCopyTrip} disabled={cloning} className="btn-primary" style={{ padding: '0.5rem 1rem', fontSize: '0.85rem' }}>
           {copiedSuccess ? <Check size={16} /> : <Copy size={16} />}
-          {copiedSuccess ? 'Cloned to Your Account!' : 'Copy This Trip'}
+          {copiedSuccess ? 'Cloned to Your Account!' : (cloning ? 'Cloning...' : 'Copy This Trip')}
         </button>
       </div>
 

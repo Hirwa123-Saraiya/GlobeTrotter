@@ -4,7 +4,8 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Compass, Calendar, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
-import { inputDateToDDMMYYYY } from '../../lib/dateFormatter';
+import { inputDateToDDMMYYYY } from '../../../lib/dateFormatter';
+import { createTrip } from '../../../lib/api';
 
 const DEFAULT_COVERS = [
   'https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=800&q=80',
@@ -22,18 +23,40 @@ export default function CreateTripPage() {
   const [budget, setBudget] = useState('50000');
   const [vibe, setVibe] = useState('Balanced');
   const [coverImage, setCoverImage] = useState(DEFAULT_COVERS[0]);
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name || !startDate || !endDate) return;
 
-    // Redirect to trips page
-    router.push('/trips');
+    setSubmitting(true);
+    const tripPayload = {
+      name,
+      description,
+      start_date: inputDateToDDMMYYYY(startDate),
+      end_date: inputDateToDDMMYYYY(endDate),
+      total_budget: parseFloat(budget) || 0,
+      vibe,
+      cover_image: coverImage
+    };
+
+    try {
+      const created = await createTrip(tripPayload);
+      if (created && created.id) {
+        router.push(`/trips/${created.id}`);
+        return;
+      }
+    } catch (err: any) {
+      console.warn('Backend API createTrip failed, redirecting to /trips:', err.message);
+    } finally {
+      setSubmitting(false);
+      router.push('/trips');
+    }
   };
 
   return (
     <div style={{ maxWidth: '680px', margin: '2.5rem auto', padding: '0 1.5rem' }}>
-      <Link href="/trips" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '1.5rem' }}>
+      <Link href="/trips" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '1.5rem', fontWeight: 600 }}>
         <ArrowLeft size={16} />
         Back to My Trips
       </Link>
@@ -147,7 +170,9 @@ export default function CreateTripPage() {
 
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
             <Link href="/trips" className="btn-secondary">Cancel</Link>
-            <button type="submit" className="btn-primary" style={{ padding: '0.75rem 1.75rem' }}>Save & Build Itinerary</button>
+            <button type="submit" disabled={submitting} className="btn-primary" style={{ padding: '0.75rem 1.75rem' }}>
+              {submitting ? 'Creating...' : 'Save & Build Itinerary'}
+            </button>
           </div>
         </form>
       </div>
