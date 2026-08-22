@@ -1,8 +1,10 @@
 import React from 'react';
+import './globals.css';
+import Navbar from '../components/Navbar';
 
 export const metadata = {
   title: 'GlobeTrotter - Empowering Personalized Travel Planning',
-  description: 'Personalized, intelligent multi-city travel planning platform',
+  description: 'Personalized multi-city travel planning platform',
 };
 
 export default function RootLayout({
@@ -12,7 +14,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <Navbar />
+        {children}
+      </body>
     </html>
   );
 }
