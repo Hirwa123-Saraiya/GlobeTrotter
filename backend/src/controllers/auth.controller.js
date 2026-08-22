@@ -9,6 +9,7 @@ const {
   clearAuthCookies,
 } = require('../utils/jwt.util');
 const userModel = require('../models/user.model');
+const { sendOtpEmail } = require('../utils/email.util');
 
 const issueTokensForUser = (userRow) => {
   const accessToken = generateAccessToken({ sub: userRow.id });
@@ -120,7 +121,7 @@ const getMe = asyncHandler(async (req, res) => {
 });
 
 /**
- * @desc    Generate a password reset token for the given email
+ * @desc    Generate and email a password reset OTP for the given email
  * @route   POST /api/auth/forgot-password
  * @access  Public
  */
@@ -131,38 +132,35 @@ const forgotPassword = asyncHandler(async (req, res) => {
   // Always respond the same way, whether or not the email exists, to avoid leaking account info
   const genericResponse = {
     success: true,
-    message: 'If an account with that email exists, a password reset link has been sent.',
+    message: 'If an account with that email exists, a password reset code has been sent.',
   };
 
   if (!user) {
     return res.status(200).json(genericResponse);
   }
 
-  const rawToken = crypto.randomBytes(32).toString('hex');
-  const hashedToken = crypto.createHash('sha256').update(rawToken).digest('hex');
-  const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+  const otp = crypto.randomInt(100000, 1000000).toString();
+  const hashedOtp = crypto.createHash('sha256').update(otp).digest('hex');
+  const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
-  await userModel.setPasswordResetToken(user.id, hashedToken, expiresAt);
-
-  // TODO: integrate an email provider (SES, SendGrid, etc). For the hackathon we log the reset link.
-  const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${rawToken}`;
-  console.log(`Password reset link for ${user.email}: ${resetUrl}`);
+  await userModel.setPasswordResetToken(user.id, hashedOtp, expiresAt);
+  await sendOtpEmail(user.email, otp);
 
   res.status(200).json(genericResponse);
 });
 
 /**
- * @desc    Reset password using a valid reset token
+ * @desc    Reset password using the OTP emailed to the user
  * @route   POST /api/auth/reset-password
  * @access  Public
  */
 const resetPassword = asyncHandler(async (req, res) => {
-  const { token, password } = req.body;
-  const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+  const { email, otp, password } = req.body;
+  const hashedOtp = crypto.createHash('sha256').update(otp).digest('hex');
 
-  const user = await userModel.findByValidResetToken(hashedToken);
+  const user = await userModel.findByEmailAndValidResetToken(email, hashedOtp);
   if (!user) {
-    throw new ApiError(400, 'Password reset token is invalid or has expired.');
+    throw new ApiError(400, 'Reset code is invalid or has expired.');
   }
 
   await userModel.resetPassword(user.id, password);

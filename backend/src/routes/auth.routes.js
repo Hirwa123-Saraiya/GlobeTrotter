@@ -133,7 +133,7 @@ router.get('/me', protect, getMe);
  * @swagger
  * /auth/forgot-password:
  *   post:
- *     summary: Request a password reset link
+ *     summary: Request a password reset OTP by email
  *     tags: [Auth]
  *     requestBody:
  *       required: true
@@ -151,7 +151,7 @@ router.post('/forgot-password', forgotPasswordValidator, validate, forgotPasswor
  * @swagger
  * /auth/reset-password:
  *   post:
- *     summary: Reset password using the token emailed to the user
+ *     summary: Reset password using the OTP emailed to the user
  *     tags: [Auth]
  *     requestBody:
  *       required: true
@@ -163,7 +163,7 @@ router.post('/forgot-password', forgotPasswordValidator, validate, forgotPasswor
  *       200:
  *         description: Password reset successful
  *       400:
- *         description: Invalid or expired token
+ *         description: Invalid or expired OTP
  */
 router.post('/reset-password', resetPasswordValidator, validate, resetPassword);
 
