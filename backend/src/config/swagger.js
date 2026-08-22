@@ -8,8 +8,7 @@ const options = {
       version: '1.0.0',
       description:
         'API documentation for GlobeTrotter — a personalized, collaborative travel planning platform. ' +
-        'This spec currently covers the Authentication module (Signup, Login, Logout, Refresh Token, ' +
-        'Forgot/Reset Password, Current User).',
+        'Covers Authentication, Trips, Trip Stops, Day-wise Itinerary Activities, and Budget Intelligence & Expense Logging.',
       contact: {
         name: 'GlobeTrotter Backend Team',
       },
@@ -24,6 +23,22 @@ const options = {
       {
         name: 'Auth',
         description: 'User authentication & session management',
+      },
+      {
+        name: 'Trips',
+        description: 'Trip itineraries, budgets, public sharing & cloning',
+      },
+      {
+        name: 'Trip Stops',
+        description: 'City stops timeline and sequence management',
+      },
+      {
+        name: 'Itinerary Activities',
+        description: 'Day-wise activities, scheduled times, custom costs, and drag-and-drop reordering',
+      },
+      {
+        name: 'Budget & Expenses',
+        description: 'Expense logging, category spending breakdown, daily averages, remaining budget, and over-budget warnings',
       },
     ],
     components: {
@@ -45,8 +60,46 @@ const options = {
             firstName: { type: 'string', example: 'Aarav' },
             lastName: { type: 'string', example: 'Shah' },
             email: { type: 'string', format: 'email', example: 'aarav@example.com' },
+            profilePhotoUrl: { type: 'string', format: 'uri', nullable: true, example: 'https://example.com/avatar.jpg' },
             createdAt: { type: 'string', format: 'date-time' },
             updatedAt: { type: 'string', format: 'date-time' },
+          },
+        },
+        UpdateMeRequest: {
+          type: 'object',
+          properties: {
+            firstName: { type: 'string', example: 'Aarav' },
+            lastName: { type: 'string', example: 'Shah' },
+            email: { type: 'string', format: 'email', example: 'aarav@example.com' },
+            profilePhotoUrl: { type: 'string', format: 'uri', example: 'https://example.com/avatar.jpg' },
+          },
+        },
+        ItineraryActivity: {
+          type: 'object',
+          properties: {
+            id: { type: 'integer', example: 1 },
+            trip_stop_id: { type: 'integer', example: 101 },
+            custom_title: { type: 'string', example: 'Visit Gateway of India' },
+            category: { type: 'string', example: 'Sightseeing' },
+            scheduled_date: { type: 'string', example: '01/09/2026' },
+            start_time: { type: 'string', example: '09:30 AM' },
+            end_time: { type: 'string', example: '12:00 PM' },
+            custom_cost: { type: 'number', example: 1500.00 },
+            notes: { type: 'string', example: 'Pre-book tickets online' },
+            sequence_order: { type: 'integer', example: 1 },
+            created_at: { type: 'string', example: '22/08/2026' },
+          },
+        },
+        Expense: {
+          type: 'object',
+          properties: {
+            id: { type: 'integer', example: 1 },
+            trip_id: { type: 'integer', example: 1 },
+            category: { type: 'string', example: 'Transport' },
+            amount: { type: 'number', example: 3500.00 },
+            description: { type: 'string', example: 'Train tickets from Mumbai to Goa' },
+            expense_date: { type: 'string', example: '02/09/2026' },
+            created_at: { type: 'string', example: '22/08/2026' },
           },
         },
         SignupRequest: {
@@ -76,9 +129,10 @@ const options = {
         },
         ResetPasswordRequest: {
           type: 'object',
-          required: ['token', 'password'],
+          required: ['email', 'otp', 'password'],
           properties: {
-            token: { type: 'string', example: 'a1b2c3d4e5f6...' },
+            email: { type: 'string', format: 'email', example: 'aarav@example.com' },
+            otp: { type: 'string', example: '123456' },
             password: { type: 'string', format: 'password', example: 'NewStrongP@ss123' },
           },
         },

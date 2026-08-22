@@ -25,7 +25,7 @@ const protect = asyncHandler(async (req, res, next) => {
   }
 
   const user = await findById(decoded.sub);
-  if (!user) {
+  if (!user || user.deleted_at) {
     throw new ApiError(401, 'User belonging to this token no longer exists.');
   }
 

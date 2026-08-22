@@ -2,7 +2,7 @@
 
 import React, { Suspense, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { API_BASE_URL } from '@/lib/api';
+import { apiClient } from '@/lib/api';
 import '@/styles/auth.css';
 
 function ResetPasswordForm() {
@@ -11,7 +11,7 @@ function ResetPasswordForm() {
 
   const [form, setForm] = useState({
     email: searchParams.get('email') || '',
-    otp: '',
+    token: '',
     password: '',
     confirmPassword: '',
   });
@@ -34,24 +34,18 @@ function ResetPasswordForm() {
     setLoading(true);
 
     try {
-      const res = await fetch(`${API_BASE_URL}/auth/reset-password`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: form.email,
-          otp: form.otp,
-          password: form.password,
-        }),
+      const res = await apiClient.post('/auth/reset-password', {
+        email: form.email,
+        token: form.token,
+        password: form.password,
       });
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.message || 'Reset failed');
+      if (res.data.success) {
+        router.push('/login');
+      } else {
+        setError(res.data.message || 'Reset failed');
       }
-
-      router.push('/login');
     } catch (err) {
-      setError(err.message);
+      setError(err.response?.data?.message || err.message || 'Reset failed.');
     } finally {
       setLoading(false);
     }
@@ -66,15 +60,15 @@ function ResetPasswordForm() {
       </div>
 
       <form className="auth-card" onSubmit={handleSubmit}>
-        <h1>Enter reset code</h1>
+        <h1>Reset Password</h1>
         <p className="auth-card-tagline">
-          We&apos;ve emailed a 6-digit code to your address. Enter it below with your new password.
+          Enter your email, reset token, and new password below.
         </p>
 
         {error && <p className="auth-error">{error}</p>}
 
         <div className="auth-field">
-          <label htmlFor="email">Email</label>
+          <label htmlFor="email">Email Address</label>
           <input
             id="email"
             name="email"
@@ -86,16 +80,13 @@ function ResetPasswordForm() {
         </div>
 
         <div className="auth-field">
-          <label htmlFor="otp">6-digit code</label>
+          <label htmlFor="token">Reset Token</label>
           <input
-            id="otp"
-            name="otp"
+            id="token"
+            name="token"
             type="text"
-            inputMode="numeric"
-            pattern="\d{6}"
-            maxLength={6}
-            placeholder="123456"
-            value={form.otp}
+            placeholder="Reset token string..."
+            value={form.token}
             onChange={handleChange}
             required
           />
@@ -132,7 +123,7 @@ function ResetPasswordForm() {
         </div>
 
         <button className="auth-submit" type="submit" disabled={loading}>
-          {loading ? 'Resetting...' : 'Reset password'}
+          {loading ? 'Resetting...' : 'Reset Password'}
         </button>
 
         <p className="auth-switch">

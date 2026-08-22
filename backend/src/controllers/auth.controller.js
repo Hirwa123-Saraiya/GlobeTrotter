@@ -9,6 +9,7 @@ const {
   clearAuthCookies,
 } = require('../utils/jwt.util');
 const userModel = require('../models/user.model');
+const { sendOtpEmail } = require('../utils/email.util');
 
 const issueTokensForUser = (userRow) => {
   const accessToken = generateAccessToken({ sub: userRow.id });
@@ -37,7 +38,11 @@ const signup = asyncHandler(async (req, res) => {
   res.status(201).json({
     success: true,
     message: 'Account created successfully.',
-    data: { user: userModel.toSafeUser(user) },
+    data: { 
+      user: userModel.toSafeUser(user),
+      accessToken,
+      refreshToken
+    },
   });
 });
 
@@ -50,7 +55,7 @@ const login = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
 
   const user = await userModel.findByEmail(email);
-  if (!user || !(await userModel.comparePassword(password, user.password))) {
+  if (!user || user.deleted_at || !(await userModel.comparePassword(password, user.password))) {
     throw new ApiError(401, 'Invalid email or password.');
   }
 
@@ -60,7 +65,11 @@ const login = asyncHandler(async (req, res) => {
   res.status(200).json({
     success: true,
     message: 'Logged in successfully.',
-    data: { user: userModel.toSafeUser(user) },
+    data: { 
+      user: userModel.toSafeUser(user),
+      accessToken,
+      refreshToken
+    },
   });
 });
 
@@ -78,14 +87,14 @@ const logout = asyncHandler(async (req, res) => {
 });
 
 /**
- * @desc    Issue a new access token using the refresh token cookie
+ * @desc    Issue a new access token using the refresh token cookie or request payload
  * @route   POST /api/auth/refresh-token
- * @access  Public (requires valid refreshToken cookie)
+ * @access  Public (requires valid refreshToken cookie or body)
  */
 const refreshAccessToken = asyncHandler(async (req, res) => {
-  const token = req.cookies?.refreshToken;
+  const token = req.cookies?.refreshToken || req.body?.refreshToken || req.headers['x-refresh-token'];
   if (!token) {
-    throw new ApiError(401, 'Refresh token missing. Please log in again.');
+    throw new ApiError(401, 'Refresh token missing from cookies and request payload. Please log in again.');
   }
 
   let decoded;
@@ -100,10 +109,19 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
     throw new ApiError(401, 'Refresh token no longer valid. Please log in again.');
   }
 
-  const { accessToken, refreshToken } = issueTokensForUser(user);
-  setAuthCookies(res, { accessToken, refreshToken });
+  const { accessToken, refreshToken: newRefreshToken } = issueTokensForUser(user);
+  setAuthCookies(res, { accessToken, refreshToken: newRefreshToken });
 
-  res.status(200).json({ success: true, message: 'Access token refreshed.' });
+  console.log(`[AUTH REFRESH] Access token refreshed successfully for user ${user.email}`);
+
+  res.status(200).json({
+    success: true,
+    message: 'Access token refreshed successfully.',
+    data: {
+      accessToken,
+      refreshToken: newRefreshToken
+    }
+  });
 });
 
 /**
@@ -120,7 +138,53 @@ const getMe = asyncHandler(async (req, res) => {
 });
 
 /**
- * @desc    Generate a password reset token for the given email
+ * @desc    Update current user profile
+ * @route   PATCH /api/auth/me
+ * @access  Private
+ */
+const updateMe = asyncHandler(async (req, res) => {
+  const { firstName, lastName, email, profilePhotoUrl } = req.body;
+
+  if (email && email.toLowerCase().trim() !== req.userRow.email) {
+    const existingUser = await userModel.findByEmail(email);
+    if (existingUser) {
+      throw new ApiError(409, 'An account with this email already exists.');
+    }
+  }
+
+  const updatedUser = await userModel.updateProfile(req.userRow.id, {
+    firstName,
+    lastName,
+    email,
+    profilePhotoUrl,
+  });
+
+  res.status(200).json({
+    success: true,
+    message: 'Profile updated successfully.',
+    data: { user: userModel.toSafeUser(updatedUser) }
+  });
+});
+
+/**
+ * @desc    Soft delete user account
+ * @route   DELETE /api/auth/me
+ * @access  Private
+ */
+const deleteMe = asyncHandler(async (req, res) => {
+  const { password } = req.body;
+  const user = await userModel.findById(req.user.id);
+  if (!user || !(await userModel.comparePassword(password, user.password))) {
+    throw new ApiError(401, 'Incorrect password. Account deletion aborted.');
+  }
+
+  await userModel.softDeleteUser(user.id);
+  clearAuthCookies(res);
+  res.status(200).json({ success: true, message: 'Account soft-deleted successfully.' });
+});
+
+/**
+ * @desc    Generate and email a password reset OTP for the given email
  * @route   POST /api/auth/forgot-password
  * @access  Public
  */
@@ -131,38 +195,35 @@ const forgotPassword = asyncHandler(async (req, res) => {
   // Always respond the same way, whether or not the email exists, to avoid leaking account info
   const genericResponse = {
     success: true,
-    message: 'If an account with that email exists, a password reset link has been sent.',
+    message: 'If an account with that email exists, a password reset code has been sent.',
   };
 
-  if (!user) {
+  if (!user || user.deleted_at) {
     return res.status(200).json(genericResponse);
   }
 
-  const rawToken = crypto.randomBytes(32).toString('hex');
-  const hashedToken = crypto.createHash('sha256').update(rawToken).digest('hex');
-  const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+  const otp = crypto.randomInt(100000, 1000000).toString();
+  const hashedOtp = crypto.createHash('sha256').update(otp).digest('hex');
+  const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
-  await userModel.setPasswordResetToken(user.id, hashedToken, expiresAt);
-
-  // TODO: integrate an email provider (SES, SendGrid, etc). For the hackathon we log the reset link.
-  const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${rawToken}`;
-  console.log(`Password reset link for ${user.email}: ${resetUrl}`);
+  await userModel.setPasswordResetToken(user.id, hashedOtp, expiresAt);
+  await sendOtpEmail(user.email, otp);
 
   res.status(200).json(genericResponse);
 });
 
 /**
- * @desc    Reset password using a valid reset token
+ * @desc    Reset password using the OTP emailed to the user
  * @route   POST /api/auth/reset-password
  * @access  Public
  */
 const resetPassword = asyncHandler(async (req, res) => {
-  const { token, password } = req.body;
-  const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+  const { email, otp, password } = req.body;
+  const hashedOtp = crypto.createHash('sha256').update(otp).digest('hex');
 
-  const user = await userModel.findByValidResetToken(hashedToken);
+  const user = await userModel.findByEmailAndValidResetToken(email, hashedOtp);
   if (!user) {
-    throw new ApiError(400, 'Password reset token is invalid or has expired.');
+    throw new ApiError(400, 'Reset code is invalid or has expired.');
   }
 
   await userModel.resetPassword(user.id, password);
@@ -177,6 +238,8 @@ module.exports = {
   logout,
   refreshAccessToken,
   getMe,
+  updateMe,
+  deleteMe,
   forgotPassword,
   resetPassword,
 };

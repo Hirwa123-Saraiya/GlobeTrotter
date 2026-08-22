@@ -1,15 +1,20 @@
 {
   "name": "globetrotter-backend",
   "version": "1.0.0",
-  "description": "GlobeTrotter Backend API with Swagger Documentation",
+  "description": "GlobeTrotter Backend API with Swagger Documentation and Prisma Migrations",
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
     "dev": "node --watch src/server.js",
-    "migrate": "node src/db/migrate.js",
-    "seed": "node src/seed.js"
+    "migrate": "npx prisma migrate dev",
+    "studio": "npx prisma studio --port 5555",
+    "db:push": "npx prisma db push",
+    "db:migrate": "npx prisma migrate dev",
+    "db:reset": "npx prisma migrate reset --force",
+    "db:deploy": "npx prisma migrate deploy"
   },
   "dependencies": {
+    "@prisma/client": "^5.17.0",
     "bcryptjs": "^2.4.3",
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
@@ -17,8 +22,12 @@
     "express": "^4.19.2",
     "express-validator": "^7.2.0",
     "jsonwebtoken": "^9.0.2",
+    "nodemailer": "^9.0.5",
     "pg": "^8.12.0",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1"
+  },
+  "devDependencies": {
+    "prisma": "^5.17.0"
   }
 }

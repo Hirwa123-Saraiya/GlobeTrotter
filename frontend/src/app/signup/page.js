@@ -2,7 +2,8 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { API_BASE_URL } from '@/lib/api';
+import { Compass } from 'lucide-react';
+import { apiClient } from '@/lib/api';
 import '@/styles/auth.css';
 
 export default function SignupPage() {
@@ -26,21 +27,14 @@ export default function SignupPage() {
     setLoading(true);
 
     try {
-      const res = await fetch(`${API_BASE_URL}/auth/signup`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(form),
-      });
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.message || 'Signup failed');
+      const res = await apiClient.post('/auth/signup', form);
+      if (res.data.success) {
+        router.push('/trips');
+      } else {
+        setError(res.data.message || 'Signup failed');
       }
-
-      router.push('/dashboard');
     } catch (err) {
-      setError(err.message);
+      setError(err.response?.data?.message || err.message || 'Signup failed.');
     } finally {
       setLoading(false);
     }
@@ -49,13 +43,15 @@ export default function SignupPage() {
   return (
     <main className="auth-page">
       <div className="auth-brand">
-        <div className="auth-brand-logo">✈️</div>
+        <div className="auth-brand-logo">
+          <Compass size={32} />
+        </div>
         <div className="auth-brand-title">GlobeTrotter</div>
         <div className="auth-brand-subtitle">Empowering Personalized Travel Planning</div>
       </div>
 
       <form className="auth-card" onSubmit={handleSubmit}>
-        <h1>Create your account</h1>
+        <h1>Create Your Account</h1>
         <p className="auth-card-tagline">Start planning your next multi-city adventure.</p>
 
         {error && <p className="auth-error">{error}</p>}
@@ -68,7 +64,7 @@ export default function SignupPage() {
               name="firstName"
               type="text"
               maxLength={100}
-              placeholder="Hirwa"
+              placeholder="Aarav"
               value={form.firstName}
               onChange={handleChange}
               required
@@ -82,7 +78,7 @@ export default function SignupPage() {
               name="lastName"
               type="text"
               maxLength={100}
-              placeholder="Saraiya"
+              placeholder="Shah"
               value={form.lastName}
               onChange={handleChange}
               required
@@ -91,7 +87,7 @@ export default function SignupPage() {
         </div>
 
         <div className="auth-field">
-          <label htmlFor="email">Email</label>
+          <label htmlFor="email">Email Address</label>
           <input
             id="email"
             name="email"
@@ -121,11 +117,11 @@ export default function SignupPage() {
         </div>
 
         <button className="auth-submit" type="submit" disabled={loading}>
-          {loading ? 'Creating account...' : 'Sign Up'}
+          {loading ? 'Creating Account...' : 'Sign Up'}
         </button>
 
         <p className="auth-switch">
-          Already have an account? <a href="/login">Login</a>
+          Already have an account? <a href="/login">Sign in</a>
         </p>
       </form>
     </main>
