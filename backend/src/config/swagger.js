@@ -8,7 +8,7 @@ const options = {
       version: '1.0.0',
       description:
         'API documentation for GlobeTrotter — a personalized, collaborative travel planning platform. ' +
-        'Covers Authentication, Trips, Trip Stops, and Day-wise Itinerary Activities.',
+        'Covers Authentication, Trips, Trip Stops, Day-wise Itinerary Activities, and Budget Intelligence & Expense Logging.',
       contact: {
         name: 'GlobeTrotter Backend Team',
       },
@@ -35,6 +35,10 @@ const options = {
       {
         name: 'Itinerary Activities',
         description: 'Day-wise activities, scheduled times, custom costs, and drag-and-drop reordering',
+      },
+      {
+        name: 'Budget & Expenses',
+        description: 'Expense logging, category spending breakdown, daily averages, remaining budget, and over-budget warnings',
       },
     ],
     components: {
@@ -76,6 +80,18 @@ const options = {
             created_at: { type: 'string', example: '22/08/2026' },
           },
         },
+        Expense: {
+          type: 'object',
+          properties: {
+            id: { type: 'integer', example: 1 },
+            trip_id: { type: 'integer', example: 1 },
+            category: { type: 'string', example: 'Transport' },
+            amount: { type: 'number', example: 3500.00 },
+            description: { type: 'string', example: 'Train tickets from Mumbai to Goa' },
+            expense_date: { type: 'string', example: '02/09/2026' },
+            created_at: { type: 'string', example: '22/08/2026' },
+          },
+        },
         SignupRequest: {
           type: 'object',
           required: ['firstName', 'lastName', 'email', 'password'],
@@ -92,21 +108,6 @@ const options = {
           properties: {
             email: { type: 'string', format: 'email', example: 'aarav@example.com' },
             password: { type: 'string', format: 'password', example: 'StrongP@ss123' },
-          },
-        },
-        ForgotPasswordRequest: {
-          type: 'object',
-          required: ['email'],
-          properties: {
-            email: { type: 'string', format: 'email', example: 'aarav@example.com' },
-          },
-        },
-        ResetPasswordRequest: {
-          type: 'object',
-          required: ['token', 'password'],
-          properties: {
-            token: { type: 'string', example: 'a1b2c3d4e5f6...' },
-            password: { type: 'string', format: 'password', example: 'NewStrongP@ss123' },
           },
         },
         ApiResponse: {
