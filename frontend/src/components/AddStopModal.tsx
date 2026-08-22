@@ -23,7 +23,6 @@ export default function AddStopModal({ isOpen, onClose, onAddStop }: AddStopModa
 
     if (!cityName || !arrivalDate || !departureDate) return;
 
-    // Edge Case Protection: Departure date cannot be earlier than arrival date
     if (new Date(departureDate) < new Date(arrivalDate)) {
       setDateError('Departure date must be on or after arrival date.');
       return;
@@ -81,7 +80,7 @@ export default function AddStopModal({ isOpen, onClose, onAddStop }: AddStopModa
           </div>
 
           <div className="form-group">
-            <label>Arrival Date * (DD/MM/YYYY)</label>
+            <label>Arrival Date *</label>
             <input 
               type="date" 
               className="form-input" 
@@ -92,7 +91,7 @@ export default function AddStopModal({ isOpen, onClose, onAddStop }: AddStopModa
           </div>
 
           <div className="form-group" style={{ marginBottom: '1.5rem' }}>
-            <label>Departure Date * (DD/MM/YYYY)</label>
+            <label>Departure Date *</label>
             <input 
               type="date" 
               className="form-input" 

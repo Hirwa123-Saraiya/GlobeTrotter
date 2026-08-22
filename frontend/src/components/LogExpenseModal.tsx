@@ -149,7 +149,7 @@ export default function LogExpenseModal({
 
           {/* Date Row */}
           <div className="form-group">
-            <label>Expense Date * (DD/MM/YYYY)</label>
+            <label>Expense Date *</label>
             <input 
               type="date" 
               className="form-input" 

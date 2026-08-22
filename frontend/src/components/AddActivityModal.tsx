@@ -48,7 +48,6 @@ export default function ActivityModal({
       setCustomCost(String(activityToEdit.custom_cost || 0));
       setNotes(activityToEdit.notes || '');
       
-      // Convert DD/MM/YYYY to YYYY-MM-DD for date input
       if (activityToEdit.scheduled_date) {
         const parts = activityToEdit.scheduled_date.split('/');
         if (parts.length === 3) {
@@ -147,7 +146,7 @@ export default function ActivityModal({
               </select>
             </div>
             <div className="form-group">
-              <label>Scheduled Date * (DD/MM/YYYY)</label>
+              <label>Scheduled Date *</label>
               <input 
                 type="date" 
                 className="form-input" 

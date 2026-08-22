@@ -124,13 +124,30 @@ export default function Navbar({ onOpenCreateModal, onLoginSuccess }: NavbarProp
             )}
           </button>
 
-          {/* Auth Action: Logout if Signed In, Sign In if Signed Out */}
+          {/* Auth Action: Profile User Badge & Logout */}
           {user ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-              <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--accent-teal)', display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
+              <Link 
+                href="/profile" 
+                style={{ 
+                  fontSize: '0.82rem', 
+                  fontWeight: 700, 
+                  color: 'var(--accent-teal)', 
+                  display: 'inline-flex', 
+                  alignItems: 'center', 
+                  gap: '0.35rem', 
+                  textDecoration: 'none',
+                  padding: '0.35rem 0.65rem',
+                  borderRadius: '0.5rem',
+                  background: 'rgba(20, 184, 166, 0.12)',
+                  border: '1px solid rgba(20, 184, 166, 0.25)',
+                  transition: 'all 0.2s ease'
+                }}
+                title="View My Profile & Settings"
+              >
                 <UserIcon size={14} />
                 {user.firstName || user.email?.split('@')[0] || 'User'}
-              </span>
+              </Link>
 
               <button
                 onClick={handleLogout}
