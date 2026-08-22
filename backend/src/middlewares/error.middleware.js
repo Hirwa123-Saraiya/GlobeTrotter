@@ -14,8 +14,8 @@ const errorHandler = (err, req, res, next) => {
     error = new ApiError(statusCode, error.message || 'Internal Server Error');
   }
 
-  // Only log non-404 unexpected errors in development to keep server console clean
-  if (process.env.NODE_ENV === 'development' && error.statusCode !== 404) {
+  // Only log unexpected server errors (500+) in console to keep terminal clean from expected 401/404 notices
+  if (process.env.NODE_ENV === 'development' && error.statusCode >= 500) {
     console.error(error);
   }
 

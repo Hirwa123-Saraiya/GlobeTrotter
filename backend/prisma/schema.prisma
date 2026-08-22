@@ -41,19 +41,82 @@ model Trip {
   created_at   DateTime   @default(now()) @db.Timestamptz()
   stops        TripStop[]
   user         User       @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  expenses     Expense[]
 
   @@map("trips")
 }
 
 model TripStop {
-  id             Int      @id @default(autoincrement())
+  id             Int                 @id @default(autoincrement())
   trip_id        Int
-  city_name      String   @db.VarChar(100)
-  arrival_date   DateTime @db.Date
-  departure_date DateTime @db.Date
-  sequence_order Int      @default(0)
-  created_at     DateTime @default(now()) @db.Timestamptz()
-  trip           Trip     @relation(fields: [trip_id], references: [id], onDelete: Cascade)
+  city_name      String              @db.VarChar(100)
+  arrival_date   DateTime            @db.Date
+  departure_date DateTime            @db.Date
+  sequence_order Int                 @default(0)
+  created_at     DateTime            @default(now()) @db.Timestamptz()
+  trip           Trip                @relation(fields: [trip_id], references: [id], onDelete: Cascade)
+  activities     ItineraryActivity[]
 
   @@map("trip_stops")
+}
+
+model ItineraryActivity {
+  id             Int      @id @default(autoincrement())
+  trip_stop_id   Int
+  custom_title   String   @db.VarChar(150)
+  category       String?  @default("Sightseeing") @db.VarChar(50)
+  scheduled_date DateTime @db.Date
+  start_time     String?  @db.VarChar(10)
+  end_time       String?  @db.VarChar(10)
+  custom_cost    Decimal? @default(0.00) @db.Decimal(10, 2)
+  notes          String?  @db.Text
+  sequence_order Int      @default(0)
+  created_at     DateTime @default(now()) @db.Timestamptz()
+  stop           TripStop @relation(fields: [trip_stop_id], references: [id], onDelete: Cascade)
+
+  @@map("itinerary_activities")
+}
+
+model Expense {
+  id           Int      @id @default(autoincrement())
+  trip_id      Int
+  category     String   @db.VarChar(50)
+  amount       Decimal  @db.Decimal(10, 2)
+  description  String?  @db.Text
+  expense_date DateTime @db.Date
+  created_at   DateTime @default(now()) @db.Timestamptz()
+  trip         Trip     @relation(fields: [trip_id], references: [id], onDelete: Cascade)
+
+  @@map("expenses")
+}
+
+model CityCatalog {
+  id             Int               @id @default(autoincrement())
+  name           String            @db.VarChar(100)
+  country        String            @db.VarChar(100)
+  region         String?           @db.VarChar(100)
+  cover_image    String?           @db.Text
+  description    String?           @db.Text
+  cost_index     String?           @default("Moderate") @db.VarChar(20)
+  popularity     Int               @default(90)
+  avg_daily_cost Decimal           @default(3500.00) @db.Decimal(10, 2)
+  created_at     DateTime          @default(now()) @db.Timestamptz()
+  activities     ActivityCatalog[]
+
+  @@map("cities_catalog")
+}
+
+model ActivityCatalog {
+  id              Int         @id @default(autoincrement())
+  city_catalog_id Int
+  title           String      @db.VarChar(150)
+  category        String      @db.VarChar(50)
+  estimated_cost  Decimal     @default(0.00) @db.Decimal(10, 2)
+  duration        String?     @db.VarChar(50)
+  cover_image     String?     @db.Text
+  description     String?     @db.Text
+  created_at      DateTime    @default(now()) @db.Timestamptz()
+  city            CityCatalog @relation(fields: [city_catalog_id], references: [id], onDelete: Cascade)
+
+  @@map("activities_catalog")
 }
