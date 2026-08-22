@@ -53,7 +53,7 @@ class TripsService {
         0 AS total_spent
       FROM trips t
       LEFT JOIN trip_stops ts ON ts.trip_id = t.id
-      WHERE t.user_id = $1
+      WHERE t.user_id = $1::uuid OR t.user_id::text = $1::text
       GROUP BY t.id
       ORDER BY t.created_at DESC
     `;
@@ -104,7 +104,7 @@ class TripsService {
     const rawTrip = tripRes.rows[0];
 
     // Ownership or Public Access check
-    if (!rawTrip.is_public && rawTrip.user_id !== userId) {
+    if (!rawTrip.is_public && String(rawTrip.user_id) !== String(userId)) {
       const error = new Error('Unauthorized access to private trip');
       error.status = 403;
       throw error;
@@ -135,7 +135,7 @@ class TripsService {
     if (checkRes.rows.length === 0) {
       return null;
     }
-    if (checkRes.rows[0].user_id !== userId) {
+    if (String(checkRes.rows[0].user_id) !== String(userId)) {
       const error = new Error('Not authorized to edit this trip');
       error.status = 403;
       throw error;
@@ -171,7 +171,7 @@ class TripsService {
     if (checkRes.rows.length === 0) {
       return false;
     }
-    if (checkRes.rows[0].user_id !== userId) {
+    if (String(checkRes.rows[0].user_id) !== String(userId)) {
       const error = new Error('Not authorized to delete this trip');
       error.status = 403;
       throw error;
@@ -189,7 +189,7 @@ class TripsService {
     if (checkRes.rows.length === 0) {
       return null;
     }
-    if (checkRes.rows[0].user_id !== userId) {
+    if (String(checkRes.rows[0].user_id) !== String(userId)) {
       const error = new Error('Not authorized to share this trip');
       error.status = 403;
       throw error;
@@ -226,7 +226,7 @@ class TripsService {
       }
       const origTrip = origTripRes.rows[0];
 
-      if (!origTrip.is_public && origTrip.user_id !== newUserId) {
+      if (!origTrip.is_public && String(origTrip.user_id) !== String(newUserId)) {
         await client.query('ROLLBACK');
         const error = new Error('Cannot copy private trip');
         error.status = 403;

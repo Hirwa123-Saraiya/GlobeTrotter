@@ -14,7 +14,8 @@ const errorHandler = (err, req, res, next) => {
     error = new ApiError(statusCode, error.message || 'Internal Server Error');
   }
 
-  if (process.env.NODE_ENV === 'development') {
+  // Only log non-404 unexpected errors in development to keep server console clean
+  if (process.env.NODE_ENV === 'development' && error.statusCode !== 404) {
     console.error(error);
   }
 
@@ -26,6 +27,10 @@ const errorHandler = (err, req, res, next) => {
 };
 
 const notFound = (req, res, next) => {
+  // Ignore chrome devtools and favicon noise
+  if (req.originalUrl.includes('com.chrome.devtools') || req.originalUrl === '/favicon.ico') {
+    return res.status(404).end();
+  }
   next(new ApiError(404, `Route not found - ${req.originalUrl}`));
 };
 

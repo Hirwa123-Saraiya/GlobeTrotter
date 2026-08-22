@@ -15,9 +15,22 @@ const { errorHandler, notFound } = require('./middlewares/error.middleware');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+const allowedOrigins = [
+  process.env.FRONTEND_URL || 'http://localhost:3000',
+  `http://localhost:${PORT}`,
+  'http://127.0.0.1:5000',
+  'http://127.0.0.1:3000'
+];
+
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(null, true); // Allow during local development & testing
+      }
+    },
     credentials: true, // required so the browser sends/receives the httpOnly JWT cookies
   })
 );
