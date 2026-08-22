@@ -11,6 +11,7 @@ const toSafeUser = (row) => {
     firstName: row.first_name,
     lastName: row.last_name,
     email: row.email,
+    profilePhotoUrl: row.profile_photo_url,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -39,6 +40,21 @@ const createUser = async ({ firstName, lastName, email, password }) => {
 
 const comparePassword = (candidatePassword, hashedPassword) => bcrypt.compare(candidatePassword, hashedPassword);
 
+const updateProfile = async (id, { firstName, lastName, email, profilePhotoUrl }) => {
+  const { rows } = await pool.query(
+    `UPDATE users
+     SET first_name = COALESCE($1, first_name),
+         last_name = COALESCE($2, last_name),
+         email = COALESCE($3, email),
+         profile_photo_url = COALESCE($4, profile_photo_url),
+         updated_at = NOW()
+     WHERE id = $5
+     RETURNING *`,
+    [firstName, lastName, email ? email.toLowerCase().trim() : null, profilePhotoUrl, id]
+  );
+  return rows[0];
+};
+
 // Bumping this invalidates every previously issued refresh token for the user (logout / password reset)
 const incrementRefreshTokenVersion = async (id) => {
   const { rows } = await pool.query(
@@ -63,10 +79,24 @@ const setPasswordResetToken = async (id, hashedToken, expiresAt) => {
 const findByValidResetToken = async (hashedToken) => {
   const { rows } = await pool.query(
     `SELECT * FROM users
-     WHERE password_reset_token = $1 AND password_reset_expires > NOW()`,
+     WHERE password_reset_token = $1 AND password_reset_expires > NOW() AND deleted_at IS NULL`,
     [hashedToken]
   );
   return rows[0] || null;
+};
+
+// Soft delete: keeps the row (and their trips) but marks the account inactive and revokes all sessions
+const softDeleteUser = async (id) => {
+  const { rows } = await pool.query(
+    `UPDATE users
+     SET deleted_at = NOW(),
+         refresh_token_version = refresh_token_version + 1,
+         updated_at = NOW()
+     WHERE id = $1
+     RETURNING *`,
+    [id]
+  );
+  return rows[0];
 };
 
 const resetPassword = async (id, newPassword) => {
@@ -91,8 +121,10 @@ module.exports = {
   findById,
   createUser,
   comparePassword,
+  updateProfile,
   incrementRefreshTokenVersion,
   setPasswordResetToken,
   findByValidResetToken,
   resetPassword,
+  softDeleteUser,
 };
