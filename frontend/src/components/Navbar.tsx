@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Compass, Globe, LogIn, LogOut, Sun, Moon, User as UserIcon } from 'lucide-react';
+import { Compass, Globe, LogIn, LogOut, Sun, Moon, User as UserIcon, Search } from 'lucide-react';
 import LoginModal from './LoginModal';
 import { useTheme } from '../context/ThemeContext';
 import { getCurrentUser, logoutUser } from '../lib/api';
@@ -84,10 +84,10 @@ export default function Navbar({ onOpenCreateModal, onLoginSuccess }: NavbarProp
             <Compass size={24} />
           </div>
           <div>
-            <span style={{ 
-              fontSize: '1.25rem', 
-              fontWeight: 800, 
-              letterSpacing: '-0.02em', 
+            <span style={{
+              fontSize: '1.25rem',
+              fontWeight: 800,
+              letterSpacing: '-0.02em',
               color: 'var(--text-main)'
             }}>
               GlobeTrotter
@@ -105,8 +105,13 @@ export default function Navbar({ onOpenCreateModal, onLoginSuccess }: NavbarProp
             My Trips
           </Link>
 
+          <Link href="/discover" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-main)', textDecoration: 'none' }}>
+            <Search size={17} color="var(--accent-teal)" />
+            Discover
+          </Link>
+
           {/* Theme Mode Toggle Button */}
-          <button 
+          <button
             onClick={toggleTheme}
             className="btn-secondary"
             style={{ padding: '0.5rem 0.75rem', fontSize: '0.82rem', borderRadius: '0.65rem' }}
@@ -151,7 +156,7 @@ export default function Navbar({ onOpenCreateModal, onLoginSuccess }: NavbarProp
       </nav>
 
       {/* Login Modal */}
-      <LoginModal 
+      <LoginModal
         isOpen={isLoginModalOpen}
         onClose={() => setIsLoginModalOpen(false)}
         onSuccess={() => {

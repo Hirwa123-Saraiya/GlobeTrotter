@@ -10,6 +10,7 @@ const tripRoutes = require('./routes/tripRoutes');
 const stopRoutes = require('./routes/stopRoutes');
 const itineraryRoutes = require('./routes/itineraryRoutes');
 const budgetRoutes = require('./routes/budgetRoutes');
+const discoveryRoutes = require('./routes/discoveryRoutes');
 const { connectDB } = require('./config/db');
 const routes = require('./routes');
 const { errorHandler, notFound } = require('./middlewares/error.middleware');
@@ -49,6 +50,7 @@ app.get('/api/health', (req, res) => {
 
 // Primary Auth & Core Routes
 app.use('/api', routes);
+app.use('/api', discoveryRoutes);
 
 // Sub-feature Routes
 app.use('/api/trips', tripRoutes);
