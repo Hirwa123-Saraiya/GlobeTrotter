@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { 
   ArrowLeft, Calendar, MapPin, DollarSign, Share2, Plus, Sparkles, 
-  CheckCircle2, ShieldCheck, RefreshCw, AlertCircle, PieChart 
+  CheckCircle2, ShieldCheck, RefreshCw, AlertCircle, PieChart, CalendarDays 
 } from 'lucide-react';
 import StopCard from '../../../components/StopCard';
 import AddStopModal from '../../../components/AddStopModal';
@@ -161,7 +161,6 @@ export default function TripDetailsPage({ params }: { params: { id: string } }) 
     );
   }
 
-  // Calculate total scheduled activities count
   const totalActivitiesCount = stops.reduce((sum, s) => sum + (s.activities ? s.activities.length : 0), 0);
 
   return (
@@ -187,7 +186,12 @@ export default function TripDetailsPage({ params }: { params: { id: string } }) 
           }} />
 
           {/* Action Buttons Overlay */}
-          <div style={{ position: 'absolute', top: '1.25rem', right: '1.25rem', display: 'flex', gap: '0.6rem', zIndex: 2 }}>
+          <div style={{ position: 'absolute', top: '1.25rem', right: '1.25rem', display: 'flex', gap: '0.6rem', zIndex: 2, flexWrap: 'wrap' }}>
+            <Link href={`/trips/${trip.id}/calendar`} className="btn-secondary" style={{ background: 'rgba(7, 9, 19, 0.65)', backdropFilter: 'blur(10px)' }}>
+              <CalendarDays size={16} color="var(--primary)" />
+              Calendar View
+            </Link>
+
             <Link href={`/trips/${trip.id}/budget`} className="btn-primary" style={{ padding: '0.6rem 1.1rem', fontSize: '0.85rem', background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)', boxShadow: '0 4px 14px rgba(245, 158, 11, 0.4)' }}>
               <PieChart size={16} />
               Budget & Expenses

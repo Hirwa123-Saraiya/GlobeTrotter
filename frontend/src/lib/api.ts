@@ -15,37 +15,39 @@ export const apiClient = axios.create({
  * AUTH API SERVICES
  * ============================================================================ */
 
-/**
- * Fetch current authenticated user profile (/api/auth/me)
- */
 export async function getCurrentUser(): Promise<any> {
   const response = await apiClient.get('/auth/me');
   return response.data.data?.user || response.data.data || response.data;
 }
 
-/**
- * Log out user (/api/auth/logout)
- */
 export async function logoutUser(): Promise<boolean> {
   const response = await apiClient.post('/auth/logout');
   return response.data.success ?? true;
 }
 
 /* ============================================================================
+ * DISCOVERY CATALOG API SERVICES
+ * ============================================================================ */
+
+export async function getCities(search?: string, region?: string): Promise<any[]> {
+  const response = await apiClient.get('/cities', { params: { search, region } });
+  return response.data.data || response.data || [];
+}
+
+export async function getActivities(search?: string, category?: string): Promise<any[]> {
+  const response = await apiClient.get('/activities', { params: { search, category } });
+  return response.data.data || response.data || [];
+}
+
+/* ============================================================================
  * TRIPS API SERVICES
  * ============================================================================ */
 
-/**
- * Fetch all trips for the authenticated user
- */
 export async function getTrips(): Promise<Trip[]> {
   const response = await apiClient.get('/trips');
   return response.data.data || response.data || [];
 }
 
-/**
- * Create a new travel itinerary
- */
 export async function createTrip(tripData: {
   name: string;
   description?: string;
@@ -59,17 +61,11 @@ export async function createTrip(tripData: {
   return response.data.data || response.data;
 }
 
-/**
- * Fetch detailed trip information by ID (includes stops & health score)
- */
 export async function getTripById(id: string | number): Promise<Trip> {
   const response = await apiClient.get(`/trips/${id}`);
   return response.data.data || response.data;
 }
 
-/**
- * Update an existing trip metadata
- */
 export async function updateTrip(
   id: string | number,
   updateData: Partial<Trip>
@@ -78,17 +74,11 @@ export async function updateTrip(
   return response.data.data || response.data;
 }
 
-/**
- * Delete a trip by ID
- */
 export async function deleteTrip(id: string | number): Promise<boolean> {
   const response = await apiClient.delete(`/trips/${id}`);
   return response.data.success ?? true;
 }
 
-/**
- * Toggle public sharing status of a trip
- */
 export async function shareTrip(
   id: string | number,
   is_public: boolean
@@ -97,9 +87,6 @@ export async function shareTrip(
   return response.data.data || response.data;
 }
 
-/**
- * Clone a public trip into the current user's account
- */
 export async function copyTrip(id: string | number): Promise<Trip> {
   const response = await apiClient.post(`/trips/${id}/copy`);
   return response.data.data || response.data;
@@ -109,9 +96,6 @@ export async function copyTrip(id: string | number): Promise<Trip> {
  * TRIP STOPS API SERVICES
  * ============================================================================ */
 
-/**
- * Add a city stop to a trip
- */
 export async function addStop(
   tripId: string | number,
   stopData: {
@@ -125,9 +109,6 @@ export async function addStop(
   return response.data.data || response.data;
 }
 
-/**
- * Update a city stop
- */
 export async function updateStop(
   stopId: string | number,
   updateData: Partial<TripStop>
@@ -136,17 +117,11 @@ export async function updateStop(
   return response.data.data || response.data;
 }
 
-/**
- * Delete a city stop
- */
 export async function deleteStop(stopId: string | number): Promise<boolean> {
   const response = await apiClient.delete(`/stops/${stopId}`);
   return response.data.success ?? true;
 }
 
-/**
- * Reorder city stops sequence
- */
 export async function reorderStops(
   tripId: string | number,
   stops: { id: number; sequence_order: number }[]
@@ -159,9 +134,6 @@ export async function reorderStops(
  * ITINERARY ACTIVITIES API SERVICES
  * ============================================================================ */
 
-/**
- * Schedule a new day-wise activity under a trip stop
- */
 export async function addActivity(activityData: {
   trip_stop_id: number;
   custom_title: string;
@@ -177,9 +149,6 @@ export async function addActivity(activityData: {
   return response.data.data || response.data;
 }
 
-/**
- * Update a scheduled activity
- */
 export async function updateActivity(
   id: string | number,
   updateData: Partial<ItineraryActivity>
@@ -188,17 +157,11 @@ export async function updateActivity(
   return response.data.data || response.data;
 }
 
-/**
- * Delete a scheduled activity
- */
 export async function deleteActivity(id: string | number): Promise<boolean> {
   const response = await apiClient.delete(`/itinerary-activities/${id}`);
   return response.data.success ?? true;
 }
 
-/**
- * Reorder activities sequence for a trip stop
- */
 export async function reorderActivities(
   tripStopId: number,
   activities: { id: number; sequence_order: number }[]
@@ -214,17 +177,11 @@ export async function reorderActivities(
  * BUDGET & EXPENSE LOGGING API SERVICES
  * ============================================================================ */
 
-/**
- * Fetch aggregated budget analytics for a trip
- */
 export async function getBudgetAnalytics(tripId: string | number): Promise<BudgetAnalytics> {
   const response = await apiClient.get(`/trips/${tripId}/budget`);
   return response.data.data || response.data;
 }
 
-/**
- * Log a new expense under a trip
- */
 export async function logExpense(
   tripId: string | number,
   expenseData: {
@@ -238,9 +195,6 @@ export async function logExpense(
   return response.data.data || response.data;
 }
 
-/**
- * Update a logged expense
- */
 export async function updateExpense(
   expenseId: string | number,
   updateData: Partial<Expense>
@@ -249,9 +203,6 @@ export async function updateExpense(
   return response.data.data || response.data;
 }
 
-/**
- * Delete a logged expense
- */
 export async function deleteExpense(expenseId: string | number): Promise<boolean> {
   const response = await apiClient.delete(`/expenses/${expenseId}`);
   return response.data.success ?? true;
