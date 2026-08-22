@@ -9,6 +9,7 @@ const {
   clearAuthCookies,
 } = require('../utils/jwt.util');
 const userModel = require('../models/user.model');
+const { sendOtpEmail } = require('../utils/email.util');
 
 const issueTokensForUser = (userRow) => {
   const accessToken = generateAccessToken({ sub: userRow.id });
@@ -54,7 +55,7 @@ const login = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
 
   const user = await userModel.findByEmail(email);
-  if (!user || !(await userModel.comparePassword(password, user.password))) {
+  if (!user || user.deleted_at || !(await userModel.comparePassword(password, user.password))) {
     throw new ApiError(401, 'Invalid email or password.');
   }
 
@@ -143,7 +144,21 @@ const getMe = asyncHandler(async (req, res) => {
  */
 const updateMe = asyncHandler(async (req, res) => {
   const { firstName, lastName, email, profilePhotoUrl } = req.body;
-  const updatedUser = await userModel.updateUser(req.user.id, { firstName, lastName, email, profilePhotoUrl });
+
+  if (email && email.toLowerCase().trim() !== req.userRow.email) {
+    const existingUser = await userModel.findByEmail(email);
+    if (existingUser) {
+      throw new ApiError(409, 'An account with this email already exists.');
+    }
+  }
+
+  const updatedUser = await userModel.updateProfile(req.userRow.id, {
+    firstName,
+    lastName,
+    email,
+    profilePhotoUrl,
+  });
+
   res.status(200).json({
     success: true,
     message: 'Profile updated successfully.',
@@ -169,7 +184,7 @@ const deleteMe = asyncHandler(async (req, res) => {
 });
 
 /**
- * @desc    Generate a password reset token for the given email
+ * @desc    Generate and email a password reset OTP for the given email
  * @route   POST /api/auth/forgot-password
  * @access  Public
  */
@@ -177,39 +192,38 @@ const forgotPassword = asyncHandler(async (req, res) => {
   const { email } = req.body;
   const user = await userModel.findByEmail(email);
 
+  // Always respond the same way, whether or not the email exists, to avoid leaking account info
   const genericResponse = {
     success: true,
-    message: 'If an account with that email exists, a password reset link has been sent.',
+    message: 'If an account with that email exists, a password reset code has been sent.',
   };
 
-  if (!user) {
+  if (!user || user.deleted_at) {
     return res.status(200).json(genericResponse);
   }
 
-  const rawToken = crypto.randomBytes(32).toString('hex');
-  const hashedToken = crypto.createHash('sha256').update(rawToken).digest('hex');
-  const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+  const otp = crypto.randomInt(100000, 1000000).toString();
+  const hashedOtp = crypto.createHash('sha256').update(otp).digest('hex');
+  const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
-  await userModel.setPasswordResetToken(user.id, hashedToken, expiresAt);
-
-  const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password?token=${rawToken}`;
-  console.log(`Password reset link for ${user.email}: ${resetUrl}`);
+  await userModel.setPasswordResetToken(user.id, hashedOtp, expiresAt);
+  await sendOtpEmail(user.email, otp);
 
   res.status(200).json(genericResponse);
 });
 
 /**
- * @desc    Reset password using a valid reset token
+ * @desc    Reset password using the OTP emailed to the user
  * @route   POST /api/auth/reset-password
  * @access  Public
  */
 const resetPassword = asyncHandler(async (req, res) => {
-  const { token, password } = req.body;
-  const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+  const { email, otp, password } = req.body;
+  const hashedOtp = crypto.createHash('sha256').update(otp).digest('hex');
 
-  const user = await userModel.findByValidResetToken(hashedToken);
+  const user = await userModel.findByEmailAndValidResetToken(email, hashedOtp);
   if (!user) {
-    throw new ApiError(400, 'Password reset token is invalid or has expired.');
+    throw new ApiError(400, 'Reset code is invalid or has expired.');
   }
 
   await userModel.resetPassword(user.id, password);
