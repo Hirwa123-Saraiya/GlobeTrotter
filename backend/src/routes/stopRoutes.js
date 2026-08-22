@@ -6,7 +6,7 @@ const {
   deleteStop,
   reorderStops
 } = require('../controllers/stopsController');
-const { authenticateToken } = require('../middleware/auth');
+const { protect } = require('../middlewares/auth.middleware');
 
 /**
  * @openapi
@@ -58,6 +58,7 @@ const { authenticateToken } = require('../middleware/auth');
  *     summary: Add a city stop to a trip (Accepts dates in DD/MM/YYYY format)
  *     tags: [Trip Stops]
  *     security:
+ *       - cookieAuth: []
  *       - bearerAuth: []
  *     parameters:
  *       - in: path
@@ -65,7 +66,6 @@ const { authenticateToken } = require('../middleware/auth');
  *         required: true
  *         schema:
  *           type: integer
- *         description: Numeric ID of the trip
  *     requestBody:
  *       required: true
  *       content:
@@ -77,12 +77,12 @@ const { authenticateToken } = require('../middleware/auth');
  *         description: City stop added to trip successfully
  *       400:
  *         description: Missing required fields
- *       403:
- *         description: Unauthorized
+ *       401:
+ *         description: Not authenticated
  *       404:
  *         description: Trip not found
  */
-router.post('/trips/:id/stops', authenticateToken, addStop);
+router.post('/trips/:id/stops', protect, addStop);
 
 /**
  * @openapi
@@ -91,6 +91,7 @@ router.post('/trips/:id/stops', authenticateToken, addStop);
  *     summary: Reorder city stops for a trip
  *     tags: [Trip Stops]
  *     security:
+ *       - cookieAuth: []
  *       - bearerAuth: []
  *     parameters:
  *       - in: path
@@ -112,7 +113,7 @@ router.post('/trips/:id/stops', authenticateToken, addStop);
  *       404:
  *         description: Trip not found
  */
-router.patch('/trips/:id/stops/reorder', authenticateToken, reorderStops);
+router.patch('/trips/:id/stops/reorder', protect, reorderStops);
 
 /**
  * @openapi
@@ -121,6 +122,7 @@ router.patch('/trips/:id/stops/reorder', authenticateToken, reorderStops);
  *     summary: Edit stop dates & city name (Accepts dates in DD/MM/YYYY format)
  *     tags: [Trip Stops]
  *     security:
+ *       - cookieAuth: []
  *       - bearerAuth: []
  *     parameters:
  *       - in: path
@@ -128,7 +130,6 @@ router.patch('/trips/:id/stops/reorder', authenticateToken, reorderStops);
  *         required: true
  *         schema:
  *           type: integer
- *         description: Numeric ID of the trip stop
  *     requestBody:
  *       required: true
  *       content:
@@ -154,7 +155,7 @@ router.patch('/trips/:id/stops/reorder', authenticateToken, reorderStops);
  *       404:
  *         description: Stop not found
  */
-router.put('/stops/:id', authenticateToken, updateStop);
+router.put('/stops/:id', protect, updateStop);
 
 /**
  * @openapi
@@ -163,6 +164,7 @@ router.put('/stops/:id', authenticateToken, updateStop);
  *     summary: Remove a stop from a trip
  *     tags: [Trip Stops]
  *     security:
+ *       - cookieAuth: []
  *       - bearerAuth: []
  *     parameters:
  *       - in: path
@@ -176,6 +178,6 @@ router.put('/stops/:id', authenticateToken, updateStop);
  *       404:
  *         description: Stop not found
  */
-router.delete('/stops/:id', authenticateToken, deleteStop);
+router.delete('/stops/:id', protect, deleteStop);
 
 module.exports = router;

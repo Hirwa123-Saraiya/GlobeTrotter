@@ -9,7 +9,7 @@ const {
   shareTrip,
   copyTrip
 } = require('../controllers/tripsController');
-const { authenticateToken } = require('../middleware/auth');
+const { protect } = require('../middlewares/auth.middleware');
 
 /**
  * @openapi
@@ -84,6 +84,7 @@ const { authenticateToken } = require('../middleware/auth');
  *     summary: List all user trips (All dates in DD/MM/YYYY format)
  *     tags: [Trips]
  *     security:
+ *       - cookieAuth: []
  *       - bearerAuth: []
  *     responses:
  *       200:
@@ -101,10 +102,12 @@ const { authenticateToken } = require('../middleware/auth');
  *                   type: array
  *                   items:
  *                     $ref: '#/components/schemas/TripResponse'
+ *       401:
+ *         description: Not authenticated
  *       500:
  *         description: Server error
  */
-router.get('/', authenticateToken, getTrips);
+router.get('/', protect, getTrips);
 
 /**
  * @openapi
@@ -113,6 +116,7 @@ router.get('/', authenticateToken, getTrips);
  *     summary: Create a new trip (Accepts dates in DD/MM/YYYY format)
  *     tags: [Trips]
  *     security:
+ *       - cookieAuth: []
  *       - bearerAuth: []
  *     requestBody:
  *       required: true
@@ -125,10 +129,12 @@ router.get('/', authenticateToken, getTrips);
  *         description: Trip created successfully with DD/MM/YYYY dates
  *       400:
  *         description: Missing required fields
+ *       401:
+ *         description: Not authenticated
  *       500:
  *         description: Server error
  */
-router.post('/', authenticateToken, createTrip);
+router.post('/', protect, createTrip);
 
 /**
  * @openapi
@@ -137,6 +143,7 @@ router.post('/', authenticateToken, createTrip);
  *     summary: Fetch detailed trip data with DD/MM/YYYY date formatting
  *     tags: [Trips]
  *     security:
+ *       - cookieAuth: []
  *       - bearerAuth: []
  *     parameters:
  *       - in: path
@@ -152,7 +159,7 @@ router.post('/', authenticateToken, createTrip);
  *       403:
  *         description: Private trip access forbidden
  */
-router.get('/:id', authenticateToken, getTripById);
+router.get('/:id', protect, getTripById);
 
 /**
  * @openapi
@@ -161,6 +168,7 @@ router.get('/:id', authenticateToken, getTripById);
  *     summary: Update trip metadata & budget (Accepts dates in DD/MM/YYYY format)
  *     tags: [Trips]
  *     security:
+ *       - cookieAuth: []
  *       - bearerAuth: []
  *     parameters:
  *       - in: path
@@ -182,7 +190,7 @@ router.get('/:id', authenticateToken, getTripById);
  *       404:
  *         description: Trip not found
  */
-router.put('/:id', authenticateToken, updateTrip);
+router.put('/:id', protect, updateTrip);
 
 /**
  * @openapi
@@ -191,6 +199,7 @@ router.put('/:id', authenticateToken, updateTrip);
  *     summary: Delete a trip
  *     tags: [Trips]
  *     security:
+ *       - cookieAuth: []
  *       - bearerAuth: []
  *     parameters:
  *       - in: path
@@ -206,7 +215,7 @@ router.put('/:id', authenticateToken, updateTrip);
  *       404:
  *         description: Trip not found
  */
-router.delete('/:id', authenticateToken, deleteTrip);
+router.delete('/:id', protect, deleteTrip);
 
 /**
  * @openapi
@@ -215,6 +224,7 @@ router.delete('/:id', authenticateToken, deleteTrip);
  *     summary: Toggle public visibility and generate/refresh share link
  *     tags: [Trips]
  *     security:
+ *       - cookieAuth: []
  *       - bearerAuth: []
  *     parameters:
  *       - in: path
@@ -237,7 +247,7 @@ router.delete('/:id', authenticateToken, deleteTrip);
  *       403:
  *         description: Unauthorized share attempt
  */
-router.post('/:id/share', authenticateToken, shareTrip);
+router.post('/:id/share', protect, shareTrip);
 
 /**
  * @openapi
@@ -246,6 +256,7 @@ router.post('/:id/share', authenticateToken, shareTrip);
  *     summary: Clone a public/shared trip into user's account
  *     tags: [Trips]
  *     security:
+ *       - cookieAuth: []
  *       - bearerAuth: []
  *     parameters:
  *       - in: path
@@ -261,6 +272,6 @@ router.post('/:id/share', authenticateToken, shareTrip);
  *       404:
  *         description: Source trip not found
  */
-router.post('/:id/copy', authenticateToken, copyTrip);
+router.post('/:id/copy', protect, copyTrip);
 
 module.exports = router;

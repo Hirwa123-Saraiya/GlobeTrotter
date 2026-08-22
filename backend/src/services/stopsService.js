@@ -29,7 +29,7 @@ class StopsService {
       error.status = 404;
       throw error;
     }
-    if (tripCheck.rows[0].user_id !== userId) {
+    if (String(tripCheck.rows[0].user_id) !== String(userId)) {
       const error = new Error('Not authorized to add stops to this trip');
       error.status = 403;
       throw error;
@@ -73,7 +73,7 @@ class StopsService {
     if (checkRes.rows.length === 0) {
       return null;
     }
-    if (checkRes.rows[0].user_id !== userId) {
+    if (String(checkRes.rows[0].user_id) !== String(userId)) {
       const error = new Error('Not authorized to edit this stop');
       error.status = 403;
       throw error;
@@ -113,7 +113,7 @@ class StopsService {
     if (checkRes.rows.length === 0) {
       return false;
     }
-    if (checkRes.rows[0].user_id !== userId) {
+    if (String(checkRes.rows[0].user_id) !== String(userId)) {
       const error = new Error('Not authorized to delete this stop');
       error.status = 403;
       throw error;
@@ -135,7 +135,7 @@ class StopsService {
       error.status = 404;
       throw error;
     }
-    if (tripCheck.rows[0].user_id !== userId) {
+    if (String(tripCheck.rows[0].user_id) !== String(userId)) {
       const error = new Error('Not authorized to reorder stops for this trip');
       error.status = 403;
       throw error;
