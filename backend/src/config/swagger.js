@@ -8,8 +8,7 @@ const options = {
       version: '1.0.0',
       description:
         'API documentation for GlobeTrotter — a personalized, collaborative travel planning platform. ' +
-        'This spec currently covers the Authentication module (Signup, Login, Logout, Refresh Token, ' +
-        'Forgot/Reset Password, Current User).',
+        'Covers Authentication, Trips, Trip Stops, and Day-wise Itinerary Activities.',
       contact: {
         name: 'GlobeTrotter Backend Team',
       },
@@ -24,6 +23,18 @@ const options = {
       {
         name: 'Auth',
         description: 'User authentication & session management',
+      },
+      {
+        name: 'Trips',
+        description: 'Trip itineraries, budgets, public sharing & cloning',
+      },
+      {
+        name: 'Trip Stops',
+        description: 'City stops timeline and sequence management',
+      },
+      {
+        name: 'Itinerary Activities',
+        description: 'Day-wise activities, scheduled times, custom costs, and drag-and-drop reordering',
       },
     ],
     components: {
@@ -47,6 +58,22 @@ const options = {
             email: { type: 'string', format: 'email', example: 'aarav@example.com' },
             createdAt: { type: 'string', format: 'date-time' },
             updatedAt: { type: 'string', format: 'date-time' },
+          },
+        },
+        ItineraryActivity: {
+          type: 'object',
+          properties: {
+            id: { type: 'integer', example: 1 },
+            trip_stop_id: { type: 'integer', example: 101 },
+            custom_title: { type: 'string', example: 'Visit Gateway of India' },
+            category: { type: 'string', example: 'Sightseeing' },
+            scheduled_date: { type: 'string', example: '01/09/2026' },
+            start_time: { type: 'string', example: '09:30 AM' },
+            end_time: { type: 'string', example: '12:00 PM' },
+            custom_cost: { type: 'number', example: 1500.00 },
+            notes: { type: 'string', example: 'Pre-book tickets online' },
+            sequence_order: { type: 'integer', example: 1 },
+            created_at: { type: 'string', example: '22/08/2026' },
           },
         },
         SignupRequest: {

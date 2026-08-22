@@ -8,6 +8,7 @@ const swaggerUi = require('swagger-ui-express');
 const swaggerSpec = require('./config/swagger');
 const tripRoutes = require('./routes/tripRoutes');
 const stopRoutes = require('./routes/stopRoutes');
+const itineraryRoutes = require('./routes/itineraryRoutes');
 const { connectDB } = require('./config/db');
 const routes = require('./routes');
 const { errorHandler, notFound } = require('./middlewares/error.middleware');
@@ -42,6 +43,7 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // API Routes
 app.use('/api/trips', tripRoutes);
+app.use('/api/itinerary-activities', itineraryRoutes);
 app.use('/api', stopRoutes);
 
 // Health Check Route
