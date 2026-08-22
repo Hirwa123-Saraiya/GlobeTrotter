@@ -6,6 +6,8 @@ const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const swaggerUi = require('swagger-ui-express');
 const swaggerSpec = require('./config/swagger');
+const tripRoutes = require('./routes/tripRoutes');
+const stopRoutes = require('./routes/stopRoutes');
 const { connectDB } = require('./config/db');
 const routes = require('./routes');
 const { errorHandler, notFound } = require('./middlewares/error.middleware');
@@ -22,8 +24,12 @@ app.use(
 app.use(express.json());
 app.use(cookieParser());
 
-// Swagger Documentation Route
+// Swagger OpenAPI Documentation Route
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
+// API Routes
+app.use('/api/trips', tripRoutes);
+app.use('/api', stopRoutes);
 
 // Health Check Route
 app.get('/api/health', (req, res) => {
