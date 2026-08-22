@@ -25,6 +25,7 @@ yarn-error.log*
 # Database / Local data
 *.sqlite
 *.db
+.pgdata/
 
 # Operating System Files
 .DS_Store
